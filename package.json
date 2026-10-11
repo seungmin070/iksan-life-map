@@ -1,0 +1,12 @@
+{
+  "name": "iksan-life-map-project",
+  "version": "1.0.0",
+  "description": "익산 원광대 및 1인 가구 특화 로컬 라이프 & 편의 지도 프로토타입",
+  "scripts": {
+    "dev": "node run-dev.js",
+    "start": "node run-dev.js",
+    "backend": "node backend/server.js",
+    "frontend": "npm --prefix frontend dev"
+  },
+  "keywords": ["iksan", "wonkwang", "single-household", "map", "react", "express"]
+}
