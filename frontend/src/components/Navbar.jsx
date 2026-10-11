@@ -16,7 +16,8 @@ export default function Navbar({
   openLateOnly,
   onToggleOpenLate,
   essentialOnly,
-  onToggleEssential
+  onToggleEssential,
+  onOpenLanding
 }) {
   return (
     <header className="header sticky-header">
@@ -92,6 +93,15 @@ export default function Navbar({
             ))}
           </select>
         </div>
+
+        {/* 소개 / 메인 덮개 열기 토글 버튼 */}
+        <button
+          className="nav-landing-toggle-btn"
+          onClick={onOpenLanding}
+          title="처음 소개 화면(메인 덮개) 열기"
+        >
+          <span>🏠 가이드 홈</span>
+        </button>
 
         {/* 카카오 지도 API 키 연동 상태 */}
         <button

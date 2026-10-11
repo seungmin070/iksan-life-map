@@ -7,6 +7,7 @@ import KakaoMapView from './components/KakaoMapView';
 import PlaceDetailModal from './components/PlaceDetailModal';
 import ReviewFormModal from './components/ReviewFormModal';
 import ApiKeyModal from './components/ApiKeyModal';
+import LandingScreen from './components/LandingScreen';
 import {
   INITIAL_CAMPUS_NODES,
   INITIAL_CATEGORIES,
@@ -43,6 +44,9 @@ export default function App() {
   });
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
 
+  // 메인 지도 진입 여부 (랜딩 페이지 덮개 상태)
+  const [showMap, setShowMap] = useState(false);
+
   // 필터 상태
   const [selectedGateId, setSelectedGateId] = useState(1); // 기본: 원광대학교병원 (id: 1)
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -52,6 +56,17 @@ export default function App() {
   const [essentialOnly, setEssentialOnly] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('score');
+
+  const handleEnterMap = useCallback((options = {}) => {
+    if (options.category) setSelectedCategory(options.category);
+    if (options.gateNodeId) setSelectedGateId(options.gateNodeId);
+    if (options.daroumOnly) setDaroumOnly(true);
+    if (options.soloOnly) setSoloOnly(true);
+    if (options.openLateOnly) setOpenLateOnly(true);
+    if (options.essentialOnly) setEssentialOnly(true);
+    if (options.sortBy) setSortBy(options.sortBy);
+    setShowMap(true);
+  }, []);
 
   // 데이터 상태: 초기 렌더링 시 embedded mock data를 즉시 계산하여 빈 화면(0 facilities) 방지
   const initialPlacesList = useMemo(() => {
@@ -240,6 +255,16 @@ export default function App() {
     setDetailModalPlace(fallbackPlace);
   };
 
+  if (!showMap) {
+    return (
+      <LandingScreen
+        onEnterMap={handleEnterMap}
+        isDarkMode={isDarkMode}
+        onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
+      />
+    );
+  }
+
   return (
     <div className={`app-container ${isDarkMode ? 'dark-mode' : ''}`}>
       {/* 글로벌 네비게이션 헤더 */}
@@ -259,6 +284,7 @@ export default function App() {
         onToggleOpenLate={() => setOpenLateOnly(!openLateOnly)}
         essentialOnly={essentialOnly}
         onToggleEssential={() => setEssentialOnly(!essentialOnly)}
+        onOpenLanding={() => setShowMap(false)}
       />
 
       {/* 메인 뷰: 좌측 장소 리스트 + 우측 인터랙티브 지도 */}
