@@ -182,6 +182,94 @@ const TAG_EXTRACTION_RULES = [
     polarity: 'POSITIVE',
     keywords: ['약국', '심야 약국', '당번약국', '상비약', '감기약', '진통제', '소화제', '타이레놀', '파스', '복약지도'],
     negativeKeywords: []
+  },
+  {
+    tagSlug: 'clearance_sale',
+    displayName: '#마감세일',
+    dimension: 'COST_BURDEN',
+    polarity: 'POSITIVE',
+    keywords: ['마감 세일', '마감세일', '타임세일', '할인 세일', '떨이'],
+    negativeKeywords: []
+  },
+  {
+    tagSlug: 'mealkit_value',
+    displayName: '#밀키트가성비',
+    dimension: 'SOLO_SUITABILITY',
+    polarity: 'POSITIVE',
+    keywords: ['밀키트', '1인 밀키트', '간편식', '신선식품 가성비', '가성비 최고'],
+    negativeKeywords: []
+  },
+  {
+    tagSlug: 'nobrand_value',
+    displayName: '#노브랜드',
+    dimension: 'COST_BURDEN',
+    polarity: 'POSITIVE',
+    keywords: ['노브랜드', 'no brand', '냉동식품', '대용량'],
+    negativeKeywords: []
+  },
+  {
+    tagSlug: 'north_gate_front',
+    displayName: '#북문바로앞',
+    dimension: 'ACCESSIBILITY',
+    polarity: 'POSITIVE',
+    keywords: ['북문 바로', '북문 앞', '북문 맞은편'],
+    negativeKeywords: []
+  },
+  {
+    tagSlug: 'night_weekend_open',
+    displayName: '#야간주말운영',
+    dimension: 'OPERATING_HOURS',
+    polarity: 'POSITIVE',
+    keywords: ['야간', '주말 운영', '주말에', '밤 23시', '심야 당번'],
+    negativeKeywords: []
+  },
+  {
+    tagSlug: 'laundry_bedding_best',
+    displayName: '#이불빨래최적',
+    dimension: 'CONVENIENCE',
+    polarity: 'POSITIVE',
+    keywords: ['이불빨래', '이불 빨래', '대형 이불', '극세사 이불'],
+    negativeKeywords: []
+  },
+  {
+    tagSlug: 'hot_dryer',
+    displayName: '#실내건조',
+    dimension: 'CONVENIENCE',
+    polarity: 'POSITIVE',
+    keywords: ['열풍 건조', '건조기', '바짝 말라', '냄새 안 나', '실내건조'],
+    negativeKeywords: []
+  },
+  {
+    tagSlug: 'single_print_ok',
+    displayName: '#1장출력가능',
+    dimension: 'SOLO_SUITABILITY',
+    polarity: 'POSITIVE',
+    keywords: ['1장', '70원', '소량 인쇄', '낱장'],
+    negativeKeywords: []
+  },
+  {
+    tagSlug: 'market_snack',
+    displayName: '#시장분식',
+    dimension: 'SOLO_SUITABILITY',
+    polarity: 'POSITIVE',
+    keywords: ['분식', '시장 떡볶이', '순대', '튀김', '김밥'],
+    negativeKeywords: []
+  },
+  {
+    tagSlug: 'sidedish_good',
+    displayName: '#반찬맛집',
+    dimension: 'SOLO_SUITABILITY',
+    polarity: 'POSITIVE',
+    keywords: ['반찬', '밑반찬', '반찬가게', '4팩 만원'],
+    negativeKeywords: []
+  },
+  {
+    tagSlug: 'early_closing_caution',
+    displayName: '#조기마감주의',
+    dimension: 'OPERATING_HOURS',
+    polarity: 'CAUTION',
+    keywords: ['조기 마감', '일찍 닫', '문 닫', '저녁 일찍', '일찍 마감'],
+    negativeKeywords: []
   }
 ];
 

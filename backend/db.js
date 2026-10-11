@@ -189,9 +189,9 @@ function initDatabase() {
   try { db.exec(`ALTER TABLE places ADD COLUMN delivery_info_text TEXT;`); } catch (e) {}
   try { db.exec(`ALTER TABLE places ADD COLUMN solo_spec_summary TEXT;`); } catch (e) {}
 
-  // 실제 카카오 GPS 좌표(35.9497) 일치 여부 확인 후 자동 재시딩
+  // 실제 카카오 GPS 좌표(35.9482) 일치 여부 확인 후 자동 재시딩
   const checkCoordinate = db.prepare('SELECT lat FROM places WHERE id = ?').get('daiso-baesan');
-  if (!checkCoordinate || Math.abs(checkCoordinate.lat - 35.9497) > 0.0001) {
+  if (!checkCoordinate || Math.abs(checkCoordinate.lat - 35.9482) > 0.0001) {
     seedDatabase(true);
   }
 }
@@ -251,11 +251,27 @@ function seedDatabase(forceClean = false) {
     ['time_4pt', '#야간이용가능(22시)', 'OPERATING_HOURS', 'POSITIVE', 'Moon'],
     ['time_caution', '#조기마감_주의(18시)', 'OPERATING_HOURS', 'CAUTION', 'AlertCircle'],
     ['stability_high', '#연중무휴_안정영업', 'OPERATING_HOURS', 'POSITIVE', 'ShieldCheck'],
-    ['stability_mart_holiday', '#의무휴업일_체크(2/4주일)', 'OPERATING_HOURS', 'CAUTION', 'Calendar'],
+    ['stability_mart_holiday', '#일요일휴무', 'OPERATING_HOURS', 'CAUTION', 'Calendar'],
     ['stability_market_erratic', '#영업시간_변동심함(Caution)', 'OPERATING_HOURS', 'CAUTION', 'XCircle'],
-    ['daroum_accepted', '#익산다로움_10%환급', 'CONVENIENCE', 'POSITIVE', 'CreditCard'],
-    ['open_24_hours', '#24시간_영업', 'OPERATING_HOURS', 'POSITIVE', 'Clock'],
-    ['solo_1person_friendly', '#1인분_포장가능', 'SOLO_SUITABILITY', 'POSITIVE', 'PackageCheck'],
+    ['daroum_accepted', '#다로움결제가능', 'CONVENIENCE', 'POSITIVE', 'CreditCard'],
+    ['open_24_hours', '#24시운영', 'OPERATING_HOURS', 'POSITIVE', 'Clock'],
+    ['solo_1person_friendly', '#자취필수품', 'SOLO_SUITABILITY', 'POSITIVE', 'PackageCheck'],
+    ['spacious_store', '#매장넓음', 'CONVENIENCE', 'POSITIVE', 'Maximize'],
+    ['clearance_sale', '#마감세일', 'COST_BURDEN', 'POSITIVE', 'Tag'],
+    ['mealkit_value', '#밀키트가성비', 'SOLO_SUITABILITY', 'POSITIVE', 'Utensils'],
+    ['hub_location', '#상권중심', 'ACCESSIBILITY', 'POSITIVE', 'Compass'],
+    ['variety_items', '#종류다양', 'CONVENIENCE', 'POSITIVE', 'Layers'],
+    ['parking_easy', '#주차편의', 'CONVENIENCE', 'POSITIVE', 'Car'],
+    ['north_gate_front', '#북문바로앞', 'ACCESSIBILITY', 'POSITIVE', 'MapPin'],
+    ['night_weekend_open', '#야간주말운영', 'OPERATING_HOURS', 'POSITIVE', 'Moon'],
+    ['friendly_service', '#친절함', 'SERVICE', 'POSITIVE', 'Smile'],
+    ['laundry_bedding_best', '#이불빨래최적', 'CONVENIENCE', 'POSITIVE', 'Waves'],
+    ['hot_dryer', '#실내건조', 'CONVENIENCE', 'POSITIVE', 'Wind'],
+    ['single_print_ok', '#1장출력가능', 'SOLO_SUITABILITY', 'POSITIVE', 'FileText'],
+    ['market_snack', '#시장분식', 'SOLO_SUITABILITY', 'POSITIVE', 'Coffee'],
+    ['sidedish_good', '#반찬맛집', 'SOLO_SUITABILITY', 'POSITIVE', 'Utensils'],
+    ['early_closing_caution', '#조기마감주의', 'OPERATING_HOURS', 'CAUTION', 'AlertCircle'],
+    ['nobrand_value', '#노브랜드', 'COST_BURDEN', 'POSITIVE', 'ShoppingBag'],
     ['caution_min_two_orders', '#2인분이상_주문필수(주의)', 'SOLO_SUITABILITY', 'CAUTION', 'AlertTriangle'],
     ['delivery_available', '#자취배달_원룸촌직송', 'CONVENIENCE', 'POSITIVE', 'Bike'],
     ['traditional_market_voucher', '#온누리상품권_사용', 'CONVENIENCE', 'POSITIVE', 'Tag'],
@@ -286,8 +302,8 @@ function seedDatabase(forceClean = false) {
       name: '다이소 익산배산점 (Daiso Iksan Baesan)',
       road_address: '전북특별자치도 익산시 배산로 164 (모현동1가)',
       dong: '모현동',
-      lat: 35.9497,
-      lng: 126.9388,
+      lat: 35.9482,
+      lng: 126.9392,
       phone: '063-858-6016',
       is_daroum_accepted: 1,
       daroum_cashback_rate: 0.10,
@@ -304,7 +320,7 @@ function seedDatabase(forceClean = false) {
       business_hours_text: '매일 10:00 ~ 22:00 (연중무휴)',
       today_status: '영업 중 · 22:00 마감 (연중무휴)',
       photo_url: 'https://images.unsplash.com/photo-1578916171728-46686eac8d58?w=600&auto=format&fit=crop&q=80',
-      scores: { access: 2.0, time: 4.0, stability: 5.0, avg: 3.67, dist: 2.7 }
+      scores: { access: 5.0, time: 4.0, stability: 5.0, avg: 4.67, dist: 1.3 }
     },
     {
       id: 'lotte-mart-iksan',
@@ -312,8 +328,8 @@ function seedDatabase(forceClean = false) {
       name: '롯데마트 익산점 (Lotte Mart Iksan)',
       road_address: '전북특별자치도 익산시 무왕로 1053 (영등동)',
       dong: '영등동',
-      lat: 35.9546,
-      lng: 126.9634,
+      lat: 35.9565,
+      lng: 126.9708,
       phone: '063-839-2500',
       is_daroum_accepted: 0,
       daroum_cashback_rate: 0.00,
@@ -330,16 +346,16 @@ function seedDatabase(forceClean = false) {
       business_hours_text: '매일 10:00 ~ 23:00 (매월 둘째, 넷째 일요일 정기 휴무)',
       today_status: '영업 중 · 23:00 마감 (심야 장보기 가능)',
       photo_url: 'https://images.unsplash.com/photo-1534723452862-4c874018d66d?w=600&auto=format&fit=crop&q=80',
-      scores: { access: 4.0, time: 5.0, stability: 3.0, avg: 4.00, dist: 1.6 }
+      scores: { access: 4.0, time: 5.0, stability: 3.0, avg: 4.00, dist: 1.7 }
     },
     {
       id: 'daiso-mohyeon',
       category_id: 1,
       name: '다이소 익산모현점 (Daiso Iksan Mohyeon)',
-      road_address: '전북특별자치도 익산시 선화로3길 33 (모현동1가)',
+      road_address: '전북특별자치도 익산시 고현로 41 (모현동1가)',
       dong: '모현동',
-      lat: 35.9525,
-      lng: 126.9458,
+      lat: 35.9515,
+      lng: 126.9465,
       phone: '063-851-6016',
       is_daroum_accepted: 1,
       daroum_cashback_rate: 0.10,
@@ -356,16 +372,16 @@ function seedDatabase(forceClean = false) {
       business_hours_text: '매일 10:00 ~ 22:00 (연중무휴)',
       today_status: '영업 중 · 22:00 마감 (연중무휴)',
       photo_url: 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=600&auto=format&fit=crop&q=80',
-      scores: { access: 3.0, time: 4.0, stability: 5.0, avg: 4.00, dist: 2.1 }
+      scores: { access: 3.0, time: 4.0, stability: 5.0, avg: 4.00, dist: 2.0 }
     },
     {
       id: 'daiso-yeongdeung',
       category_id: 1,
       name: '다이소 익산영등점 (Daiso Iksan Yeongdeung)',
-      road_address: '전북특별자치도 익산시 고봉로 319 (영등동)',
+      road_address: '전북특별자치도 익산시 무왕로 1052 (영등동)',
       dong: '영등동',
-      lat: 35.9612,
-      lng: 126.9745,
+      lat: 35.9578,
+      lng: 126.9723,
       phone: '063-832-6016',
       is_daroum_accepted: 1,
       daroum_cashback_rate: 0.10,
@@ -388,10 +404,10 @@ function seedDatabase(forceClean = false) {
       id: 'emart-iksan',
       category_id: 2,
       name: '이마트 익산점 (Emart Iksan)',
-      road_address: '전북특별자치도 익산시 평동로 705 (동산동)',
-      dong: '동산동',
-      lat: 35.9388,
-      lng: 126.9678,
+      road_address: '전북특별자치도 익산시 평동로 705 (평화동)',
+      dong: '평화동',
+      lat: 35.9355,
+      lng: 126.9625,
       phone: '063-839-1234',
       is_daroum_accepted: 0,
       daroum_cashback_rate: 0.00,
@@ -416,8 +432,8 @@ function seedDatabase(forceClean = false) {
       name: '서동시장 (Seodong Market)',
       road_address: '전북특별자치도 익산시 중앙로3길 38 (창인동1가)',
       dong: '창인동',
-      lat: 35.9451,
-      lng: 126.9535,
+      lat: 35.9432,
+      lng: 126.9538,
       phone: '063-855-8855',
       is_daroum_accepted: 1,
       daroum_cashback_rate: 0.10,
@@ -440,10 +456,10 @@ function seedDatabase(forceClean = false) {
       id: 'iksan-jungang-market',
       category_id: 3,
       name: '익산 중앙시장 (Iksan Jungang Market)',
-      road_address: '전북특별자치도 익산시 중앙로 36 (창인동1가)',
+      road_address: '전북특별자치도 익산시 중앙로 36 (창인동1가, 익산역 부근)',
       dong: '창인동',
-      lat: 35.9439,
-      lng: 126.9548,
+      lat: 35.9425,
+      lng: 126.9542,
       phone: '063-852-2580',
       is_daroum_accepted: 1,
       daroum_cashback_rate: 0.10,
@@ -466,10 +482,10 @@ function seedDatabase(forceClean = false) {
       id: 'laundry-washenjoy',
       category_id: 4,
       name: '워시엔조이 24시 셀프빨래방 익산신동점 (WashEnjoy 24H)',
-      road_address: '전북특별자치도 익산시 익산대로68길 35 (신동 원룸촌)',
+      road_address: '전북특별자치도 익산시 익산대로68길 35 (신동, 원광대 북문 원룸촌)',
       dong: '신동',
-      lat: 35.9702,
-      lng: 126.9582,
+      lat: 35.9718,
+      lng: 126.9572,
       phone: '063-853-2400',
       is_daroum_accepted: 1,
       daroum_cashback_rate: 0.10,
@@ -518,10 +534,10 @@ function seedDatabase(forceClean = false) {
       id: 'pharmacy-daehak-onnuri',
       category_id: 6,
       name: '대학온누리약국 (Daehak Onnuri Pharmacy)',
-      road_address: '전북특별자치도 익산시 무왕로 895 (신동, 원대병원 정문 맞은편)',
+      road_address: '전북특별자치도 익산시 익산대로 460 (신동, 원광대 북문 앞)',
       dong: '신동',
-      lat: 35.9680,
-      lng: 126.9586,
+      lat: 35.9712,
+      lng: 126.9565,
       phone: '063-855-5800',
       is_daroum_accepted: 1,
       daroum_cashback_rate: 0.10,
@@ -533,7 +549,7 @@ function seedDatabase(forceClean = false) {
       delivery_available: 0,
       min_delivery_amount: 0,
       delivery_fee: 0,
-      delivery_info_text: '약사 복약지도 필수 (원대병원 정문 앞 방문 수령)',
+      delivery_info_text: '약사 복약지도 필수 (원대 북문 앞 방문 수령)',
       solo_spec_summary: '1인 자취생 필수 상비약(진통제, 종합감기약, 소화제, 파스) 소포장 완비, 심야 23시까지 운영',
       business_hours_text: '매일 08:30 ~ 23:00 (연중무휴 365일 심야·주말 당번약국)',
       today_status: '영업 중 · 23:00 마감 (365일 심야 당번약국)',
@@ -578,118 +594,121 @@ function seedDatabase(forceClean = false) {
   insertUser.run('user-wku-hosp-01', '원대병원실습생', 'WONKWANG_STUDENT', 1);
   insertUser.run('user-wku-nurse-02', '원대간호자취러', 'WONKWANG_STUDENT', 1);
   insertUser.run('user-resident-03', '모현동주민', 'IKSAN_RESIDENT', 1);
+  insertUser.run('user-wku-eng-04', '원대공대생', 'WONKWANG_STUDENT', 1);
+  insertUser.run('user-yd-05', '영등동자취생', 'IKSAN_RESIDENT', 1);
+  insertUser.run('user-is-06', '익산시민자취러', 'IKSAN_RESIDENT', 1);
 
-  // 6. 새로운 리뷰 주입 (3대 축 반영)
+  // 6. 새로운 리뷰 주입 (학생 생생 후기 & 3대 축 반영)
   const reviewsSeed = [
     {
       id: 'rev-daiso-baesan',
       place_id: 'daiso-baesan',
       user_id: 'user-wku-hosp-01',
       overall_rating: 4.5,
-      content: '배산 메인 도로변에 위치해 모현동 중심 생활권입니다. 1인분 소포장 식기 구비에 다로움 10% 캐시백까지 쏠쏠하고 밤 10시까지 안정적으로 열려있어요.',
+      content: '원대병원 기준 도보로 가기 편하고 매장이 엄청 커서 자취 필수품 다 있어요. 다로움 결제도 잘 됩니다!',
       reviewer_tier: 'WONKWANG_STUDENT',
       weight_multiplier: 1.3,
-      ratings: { access: 2.0, time: 4.0, stability: 5.0 },
-      tags: ['access_2pt', 'time_4pt', 'stability_high', 'great_value_essentials', 'daroum_accepted', 'solo_1person_friendly']
+      ratings: { access: 5.0, time: 4.0, stability: 5.0 },
+      tags: ['solo_1person_friendly', 'spacious_store', 'daroum_accepted']
     },
     {
       id: 'rev-lotte-mart',
       place_id: 'lotte-mart-iksan',
       user_id: 'user-wku-nurse-02',
       overall_rating: 4.0,
-      content: '원대병원에서 1.6km 거리(접근성 4점). 밤 11시까지 영업해서 나이트 근무 전후로 들르기 시간 충분성이 5점으로 아주 좋습니다. 1인용 소포장 밀키트와 당일배송이 잘 되어 있어요. 단, 대형마트 2/4째 일요일 의무휴무 체크 필수!',
+      content: '주말에 마감 세일 때 가면 밀키트나 신선식품 가성비 최고예요. 둘째/넷째 일요일 휴무 꼭 확인하세요.',
       reviewer_tier: 'WONKWANG_STUDENT',
       weight_multiplier: 1.3,
       ratings: { access: 4.0, time: 5.0, stability: 3.0 },
-      tags: ['access_4pt', 'time_5pt', 'stability_mart_holiday', 'delivery_available', 'solo_1person_friendly']
+      tags: ['clearance_sale', 'mealkit_value', 'stability_mart_holiday']
     },
     {
       id: 'rev-daiso-mohyeon',
       place_id: 'daiso-mohyeon',
       user_id: 'user-resident-03',
       overall_rating: 4.0,
-      content: '원대병원 기준 2.1km 거리(접근성 3점). 모현동 중심 상권에 있어서 연중무휴로 밤 10시까지 안정적으로 장볼 수 있습니다. 1인 가구 주방/욕실용품 다 모여있고 다로움 카드 환급도 됩니다.',
+      content: '모현동 상권 중심에 있어서 생활용품 사기 편해요. 1인 가구 소형 식기랑 수납함 종류가 많아서 자취 시작할 때 필수 코스입니다.',
       reviewer_tier: 'IKSAN_RESIDENT',
       weight_multiplier: 1.2,
       ratings: { access: 3.0, time: 4.0, stability: 5.0 },
-      tags: ['access_3pt', 'time_4pt', 'stability_high', 'great_value_essentials', 'daroum_accepted', 'solo_1person_friendly']
+      tags: ['solo_1person_friendly', 'hub_location', 'daroum_accepted']
     },
     {
       id: 'rev-daiso-yeongdeung',
       place_id: 'daiso-yeongdeung',
-      user_id: 'user-wku-hosp-01',
+      user_id: 'user-yd-05',
       overall_rating: 4.3,
-      content: '원대병원 기준 1.7km 거리(접근성 4점). 영등동 학원가/상권에 위치하며 2층 규모라 재고가 넉넉합니다. 연중무휴 22시까지 운영 안정성이 높고 자취방 원룸 정리함 사기 좋아요.',
-      reviewer_tier: 'WONKWANG_STUDENT',
-      weight_multiplier: 1.3,
+      content: '영등동 상권 중심이라 식사하고 들르기 좋아요. 물건 종류가 익산에서 제일 많은 느낌입니다.',
+      reviewer_tier: 'IKSAN_RESIDENT',
+      weight_multiplier: 1.2,
       ratings: { access: 4.0, time: 4.0, stability: 5.0 },
-      tags: ['access_4pt', 'time_4pt', 'stability_high', 'great_value_essentials', 'daroum_accepted', 'solo_1person_friendly']
+      tags: ['hub_location', 'variety_items', 'parking_easy']
     },
     {
       id: 'rev-emart-iksan',
       place_id: 'emart-iksan',
-      user_id: 'user-resident-03',
-      overall_rating: 2.7,
-      content: '원대병원에서 3.4km로 뚜벅이 자취생에게는 거리 부담이 큽니다(접근성 1점). 노브랜드 자취식품 가성비는 최고라 SSG 쓱배송으로 한 번에 주문하는 걸 추천합니다.',
-      reviewer_tier: 'IKSAN_RESIDENT',
-      weight_multiplier: 1.2,
+      user_id: 'user-wku-hosp-01',
+      overall_rating: 3.0,
+      content: '원대병원에선 거리가 좀 있어서 뚜벅이는 가기 힘들지만 노브랜드 가성비 쟁여놓을 땐 쓱배송이나 차 타고 가기 좋아요.',
+      reviewer_tier: 'WONKWANG_STUDENT',
+      weight_multiplier: 1.3,
       ratings: { access: 1.0, time: 4.0, stability: 3.0 },
-      tags: ['access_1pt', 'time_4pt', 'stability_mart_holiday', 'delivery_available']
+      tags: ['nobrand_value', 'mealkit_value', 'stability_mart_holiday']
     },
     {
       id: 'rev-seodong-market',
       place_id: 'seodong-market',
       user_id: 'user-wku-nurse-02',
-      overall_rating: 1.7,
-      content: '원대병원에서 2.6km 거리(접근성 2점). 저녁 6시면 상점들이 거의 다 닫아서 시간 충분성이 2점입니다. 밑반찬 4팩 만원 가성비는 좋으나 점포별 영업일 편차가 심합니다.',
+      overall_rating: 3.5,
+      content: '저녁 일찍 닫아서 아쉽지만 주말 낮에 분식이나 반찬 사러 가기 좋습니다. 다로움 환영해주심!',
       reviewer_tier: 'WONKWANG_STUDENT',
       weight_multiplier: 1.3,
       ratings: { access: 2.0, time: 2.0, stability: 1.0 },
-      tags: ['access_2pt', 'time_caution', 'stability_market_erratic', 'traditional_market_voucher', 'solo_1person_friendly']
+      tags: ['market_snack', 'sidedish_good', 'early_closing_caution']
     },
     {
       id: 'rev-jungang-market',
       place_id: 'iksan-jungang-market',
-      user_id: 'user-resident-03',
-      overall_rating: 1.7,
-      content: '원대병원 기준 2.8km 구도심에 위치(접근성 2점). 18시 30분이면 문을 닫고 휴무일 변동이 심해 퇴근 후 장보기는 어렵습니다. 1인 분식 포장은 가능하나 낮 시간 방문 필수.',
+      user_id: 'user-is-06',
+      overall_rating: 3.5,
+      content: '저녁 일찍 닫아서 아쉽지만 주말 낮에 분식이나 반찬 사러 가기 좋습니다. 다로움 환영해주심!',
       reviewer_tier: 'IKSAN_RESIDENT',
       weight_multiplier: 1.2,
       ratings: { access: 2.0, time: 2.0, stability: 1.0 },
-      tags: ['access_2pt', 'time_caution', 'stability_market_erratic', 'traditional_market_voucher']
+      tags: ['market_snack', 'sidedish_good', 'early_closing_caution']
     },
     {
       id: 'rev-laundry-washenjoy',
       place_id: 'laundry-washenjoy',
       user_id: 'user-wku-hosp-01',
       overall_rating: 5.0,
-      content: '원대병원 바로 옆 신동 원룸촌 0.2km(도보 2분, 접근성 5점 만점)! 원룸 드럼세탁기로 감당 안 되는 대형 겨울 극세사 이불빨래(20kg)를 50분 만에 열풍 건조까지 마칠 수 있어 생명줄 같은 곳입니다. 24시간 연중무휴 상시 오픈이라 심야 이용에 최고예요.',
+      content: '원룸 세탁기로 이불빨래 불가능할 때 필수! 건조기 성능 좋아서 빨래 바짝 말라 냄새 안 나요.',
       reviewer_tier: 'WONKWANG_STUDENT',
       weight_multiplier: 1.3,
       ratings: { access: 5.0, time: 5.0, stability: 5.0 },
-      tags: ['access_5pt', 'time_5pt', 'stability_high', 'open_24_hours', 'laundry_bedding', 'solo_1person_friendly', 'daroum_accepted']
+      tags: ['open_24_hours', 'laundry_bedding_best', 'hot_dryer']
     },
     {
       id: 'rev-print-cafe-wku',
       place_id: 'print-cafe-wku',
-      user_id: 'user-wku-nurse-02',
+      user_id: 'user-wku-eng-04',
       overall_rating: 5.0,
-      content: '원광대 대학로 메인거리 0.1km 초근접(접근성 5점). 실습 지침서랑 컨퍼런스 자료 뽑을 때 24시간 무인으로 1장(70원)부터 카드결제 가능해서 눈치 안 보고 뽑습니다. 제본기랑 스테이플러 완비!',
+      content: '원대 메인 대학로 바로 앞이라 시험기간이나 과제 출력할 때 24시간 1장 70원 카드결제돼서 최고입니다!',
       reviewer_tier: 'WONKWANG_STUDENT',
       weight_multiplier: 1.3,
       ratings: { access: 5.0, time: 5.0, stability: 5.0 },
-      tags: ['access_5pt', 'time_5pt', 'stability_high', 'open_24_hours', 'print_24h', 'solo_1person_friendly']
+      tags: ['open_24_hours', 'single_print_ok', 'hub_location']
     },
     {
       id: 'rev-pharmacy-daehak',
       place_id: 'pharmacy-daehak-onnuri',
-      user_id: 'user-wku-hosp-01',
+      user_id: 'user-wku-nurse-02',
       overall_rating: 5.0,
-      content: '원대병원 정문 바로 맞은편 0.1km 초근접(접근성 5점). 365일 연중무휴로 밤 23시까지 불 켜져 있는 심야 당번약국입니다. 급체나 열날 때 1인용 상비약 소포장 구매 가능하고 다로움 10% 환급도 됩니다.',
+      content: '원대 북문 바로 앞이라 야간이나 주말에 갑자기 아플 때 바로 약 살 수 있어서 자취생 생명줄이에요.',
       reviewer_tier: 'WONKWANG_STUDENT',
       weight_multiplier: 1.3,
       ratings: { access: 5.0, time: 5.0, stability: 5.0 },
-      tags: ['access_5pt', 'time_5pt', 'stability_high', 'night_pharmacy', 'daroum_accepted', 'solo_1person_friendly']
+      tags: ['north_gate_front', 'night_weekend_open', 'friendly_service']
     }
   ];
 
@@ -877,11 +896,11 @@ function getPlaces({ category, daroum, soloOnly, openLate, quickFilter, gateNode
   }
 
   if (openLate === 'true' || openLate === true) {
-    query += ' AND (p.business_hours_text LIKE "%24%" OR p.business_hours_text LIKE "%23:00%" OR p.today_status LIKE "%24%" OR p.today_status LIKE "%심야%")';
+    query += " AND (p.business_hours_text LIKE '%24%' OR p.business_hours_text LIKE '%23:00%' OR p.today_status LIKE '%24%' OR p.today_status LIKE '%심야%')";
   }
 
   if (quickFilter === 'essential') {
-    query += ' AND c.slug IN ("laundry", "pharmacy", "print")';
+    query += " AND c.slug IN ('laundry', 'pharmacy', 'print')";
   }
 
   if (search) {
