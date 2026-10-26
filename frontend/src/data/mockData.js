@@ -198,6 +198,11 @@ export function estimateWalkingInfo(straightMeters) {
   const walkSteps = Math.round(actualWalkMeters * 1.35);
   // 예상 소모 칼로리 (분당 약 4.2 kcal)
   const caloriesKcal = Math.round(walkMinutes * 4.2);
+
+  // 차량 이동 예상 거리 (익산 시내 주행 경로 계수 1.35x) 및 소요 시간 (신호 대기 포함 25~30km/h, 분당 약 420m)
+  const actualDriveMeters = Math.round(straightMeters * 1.35);
+  const driveMinutes = Math.max(2, Math.round(actualDriveMeters / 420) + 1);
+
   // 택시 예상 요금: 기본 4,000원 + 거리비례요금 (130m당 100원)
   const taxiFare =
     actualWalkMeters <= 1500
@@ -209,6 +214,8 @@ export function estimateWalkingInfo(straightMeters) {
     walkMinutes,
     walkSteps,
     caloriesKcal,
+    actualDriveMeters,
+    driveMinutes,
     taxiFare
   };
 }
@@ -969,6 +976,265 @@ export const RAW_PLACES_DATA = [
       { tag_slug: 'night_weekend_open', display_name: '#야간주말운영', polarity: 'POSITIVE' },
       { tag_slug: 'friendly_service', display_name: '#친절함', polarity: 'POSITIVE' }
     ]
+  },
+  // 9. 사용자 요청 필수 점포 6곳 (실제 익산 위도·경도 정밀 좌표 반영)
+  {
+    id: 'food-day-iksan',
+    category_id: 2,
+    category_slug: 'food_mart',
+    category_name: '식자재마트 / 대용량',
+    name: '푸드데이 (익산 식자재 마트)',
+    road_address: '전북특별자치도 익산시 무왕로 953 (신동 139-18)',
+    dong: '신동',
+    lat: 35.9608,
+    lng: 126.9665,
+    phone: '063-838-8989',
+    is_daroum_accepted: 1,
+    daroum_cashback_rate: 0.10,
+    has_solo_seats: 1,
+    is_single_order_allowed: 1,
+    takeout_available: 1,
+    single_portion_takeout: 1,
+    takeout_discount_text: '익산다이로움 10% 캐시백 즉시 환급 (월 3만원 한도)',
+    delivery_available: 1,
+    min_delivery_amount: 30000,
+    delivery_fee: 3000,
+    delivery_info_text: '신동/원룸촌 당일 박스 배송 (3만원 이상 3,000원)',
+    solo_spec_summary: '신선한 식재료 외에도 주방세제, 물티슈, 락스, 일회용품, 청소도구 등 기본적인 생활잡화와 자취생용 생필품을 초특가 박스 단위 및 소포장으로 저렴하게 취급하는 창고형 식자재 마트',
+    business_hours_text: '매일 06:00 ~ 23:00 (연중무휴 아침 일찍 오픈)',
+    today_status: '영업 중 · 23:00 마감 (다이로움 10% 환급)',
+    time_score: 5.0,
+    stability_score: 5.0,
+    reviews: [
+      {
+        id: 'rev-food-day-01',
+        nickname: '신동자취마스터',
+        verification_tier: 'WONKWANG_STUDENT',
+        overall_rating: 4.8,
+        content: '신선한 식재료뿐만 아니라 락스, 물티슈, 세제 같은 자취 생필품도 대형마트보다 훨씬 싸서 쟁여두기 최고예요! 다이로움 10% 환급도 바로 돼서 생활비 엄청 아꼈습니다.',
+        created_at: '2026-10-15'
+      }
+    ],
+    badges: [
+      { tag_slug: 'food_and_essentials', display_name: '#식자재_생필품동시구매', polarity: 'POSITIVE' },
+      { tag_slug: 'daroum_10pct', display_name: '#다이로움10%환급', polarity: 'POSITIVE' },
+      { tag_slug: 'open_early_late', display_name: '#06시~23시영업', polarity: 'POSITIVE' }
+    ]
+  },
+  {
+    id: 'lotte-mart-2f',
+    category_id: 3,
+    category_slug: 'mart',
+    category_name: '대형마트 / 식료품',
+    name: '롯데마트 익산점 2층 (생활용품·침구·수납관)',
+    road_address: '전북특별자치도 익산시 무왕로 1053 (영등동 833) 2층',
+    dong: '영등동',
+    lat: 35.9565,
+    lng: 126.9708,
+    phone: '063-839-2500',
+    is_daroum_accepted: 0,
+    daroum_cashback_rate: 0.00,
+    has_solo_seats: 1,
+    is_single_order_allowed: 1,
+    takeout_available: 1,
+    single_portion_takeout: 1,
+    takeout_discount_text: '롯데마트 M쿠폰 / 엘포인트 적립',
+    delivery_available: 1,
+    min_delivery_amount: 40000,
+    delivery_fee: 3000,
+    delivery_info_text: '오늘당일배송 (4만원 이상 무료배송)',
+    solo_spec_summary: '이불, 침구류(룸바이홈), 수납함, 플라스틱 서랍장, 1인용 식기류·수저세트, 프라이팬, 멀티탭, 욕실 인테리어 용품 코너가 완벽하게 갖춰진 대형 쇼핑관 (자취방 첫 입주 필수품)',
+    business_hours_text: '매일 10:00 ~ 23:00 (매월 둘째, 넷째 일요일 정기 휴무)',
+    today_status: '영업 중 · 23:00 마감 (이불/수납함/식기 코너 완비)',
+    time_score: 5.0,
+    stability_score: 3.0,
+    reviews: [
+      {
+        id: 'rev-lotte-2f-01',
+        nickname: '새내기자취러',
+        verification_tier: 'WONKWANG_STUDENT',
+        overall_rating: 4.5,
+        content: '원룸 처음 입주할 때 필요한 이불 세트랑 옷 정리용 투명 수납함, 식판, 냄비 한 번에 다 샀어요. 대기업 마트라 다이로움 10% 캐시백은 안 되지만 물건 종류가 제일 다양해요.',
+        created_at: '2026-10-18'
+      }
+    ],
+    badges: [
+      { tag_slug: 'bedding_storage', display_name: '#이불_수납함_식기전문', polarity: 'POSITIVE' },
+      { tag_slug: 'large_scale_shopping', display_name: '#원스톱자취쇼핑', polarity: 'POSITIVE' },
+      { tag_slug: 'no_daroum_warning', display_name: '#다이로움불가(대형마트)', polarity: 'CAUTION' }
+    ]
+  },
+  {
+    id: 'nobrand-busong',
+    category_id: 3,
+    category_slug: 'mart',
+    category_name: '대형마트 / 식료품',
+    name: '노브랜드 익산 부송점 (PB 생필품·간편식)',
+    road_address: '전북특별자치도 익산시 무왕로 1242 (부송동 257-48)',
+    dong: '부송동',
+    lat: 35.9599,
+    lng: 126.9948,
+    phone: '063-833-8904',
+    is_daroum_accepted: 0,
+    daroum_cashback_rate: 0.00,
+    has_solo_seats: 1,
+    is_single_order_allowed: 1,
+    takeout_available: 1,
+    single_portion_takeout: 1,
+    takeout_discount_text: '신세계포인트 적립 및 이마트 e머니 사용',
+    delivery_available: 0,
+    min_delivery_amount: 0,
+    delivery_fee: 0,
+    delivery_info_text: '매장 직접 방문 장보기 (주차장 완비)',
+    solo_spec_summary: '물티슈 100매 800원대, 대용량 3겹 롤화장지, 주방세제, 세탁세제, 냉동 닭가슴살·볶음밥 등 갓성비 PB 생필품 및 대용량 간편식의 성지',
+    business_hours_text: '매일 11:00 ~ 21:30 (매월 둘째, 넷째 일요일 정기 휴무)',
+    today_status: '영업 중 · 21:30 마감 (가성비 PB 생필품·간편식)',
+    time_score: 4.0,
+    stability_score: 3.0,
+    reviews: [
+      {
+        id: 'rev-nobrand-01',
+        nickname: '원대공대생',
+        verification_tier: 'WONKWANG_STUDENT',
+        overall_rating: 4.7,
+        content: '물티슈, 휴지, 세제, 햇반 대체용 즉석밥 전부 노브랜드 PB로 사면 자취 생활비 절반으로 줄어듭니다! 원대에서 차 타고 한 번 갈 때 왕창 쟁여오는 편이에요.',
+        created_at: '2026-10-20'
+      }
+    ],
+    badges: [
+      { tag_slug: 'nobrand_value_pb', display_name: '#갓성비PB생필품', polarity: 'POSITIVE' },
+      { tag_slug: 'cheap_wet_wipes', display_name: '#물티슈_화장지_세제최저가', polarity: 'POSITIVE' },
+      { tag_slug: 'no_daroum_warning', display_name: '#다이로움불가(대기업PB)', polarity: 'CAUTION' }
+    ]
+  },
+  {
+    id: 'openbox-iksan',
+    category_id: 4,
+    category_slug: 'essentials',
+    category_name: '올리브영 / 생활잡화',
+    name: '오픈박스 익산점 (리퍼브·알뜰 생활용품)',
+    road_address: '전북특별자치도 익산시 무왕로 1247 (부송동 257-27)',
+    dong: '부송동',
+    lat: 35.9602,
+    lng: 126.9952,
+    phone: '063-831-7780',
+    is_daroum_accepted: 1,
+    daroum_cashback_rate: 0.10,
+    has_solo_seats: 1,
+    is_single_order_allowed: 1,
+    takeout_available: 1,
+    single_portion_takeout: 1,
+    takeout_discount_text: '익산다이로움 결제 시 10% 캐시백 즉시 환급',
+    delivery_available: 0,
+    min_delivery_amount: 0,
+    delivery_fee: 0,
+    delivery_info_text: '매장 현장 실물 확인 알뜰 픽업',
+    solo_spec_summary: '리퍼브 매장 (단순 변심 반품, 박스 훼손 이월 상품 전문. 소형 청소기, 에어프라이어, 전기포트, 텀블러, 주방잡화 30~70% 알뜰 구매 + 다이로움 10% 추가 환급)',
+    business_hours_text: '매일 10:00 ~ 20:30 (연중무휴)',
+    today_status: '영업 중 · 20:30 마감 (반품·리퍼브 30~70% 할인 + 다이로움 10%)',
+    time_score: 4.0,
+    stability_score: 5.0,
+    reviews: [
+      {
+        id: 'rev-openbox-01',
+        nickname: '알뜰자취왕',
+        verification_tier: 'WONKWANG_STUDENT',
+        overall_rating: 4.9,
+        content: '자취방에 놓을 소형 무선청소기랑 전기포트, 옷걸이 여기서 정가의 반값도 안 되는 가격에 득템했어요! 다이로움 10% 환급까지 받아서 완전 돈 굳었습니다.',
+        created_at: '2026-10-22'
+      }
+    ],
+    badges: [
+      { tag_slug: 'refurb_discount', display_name: '#반품리퍼브_30~70%할인', polarity: 'POSITIVE' },
+      { tag_slug: 'daroum_10pct', display_name: '#다이로움10%환급', polarity: 'POSITIVE' },
+      { tag_slug: 'small_appliances', display_name: '#자취가전_주방잡화알뜰구매', polarity: 'POSITIVE' }
+    ]
+  },
+  {
+    id: 'artbox-iksan',
+    category_id: 4,
+    category_slug: 'essentials',
+    category_name: '올리브영 / 생활잡화',
+    name: '아트박스 익산점 (자취 인테리어·생활잡화)',
+    road_address: '전북특별자치도 익산시 무왕로 1083 (영등동 845-1, 1~3층)',
+    dong: '영등동',
+    lat: 35.9588,
+    lng: 126.9748,
+    phone: '0507-1451-0792',
+    is_daroum_accepted: 1,
+    daroum_cashback_rate: 0.10,
+    has_solo_seats: 1,
+    is_single_order_allowed: 1,
+    takeout_available: 1,
+    single_portion_takeout: 1,
+    takeout_discount_text: '익산다이로움 결제 시 10% 캐시백 즉시 환급',
+    delivery_available: 0,
+    min_delivery_amount: 0,
+    delivery_fee: 0,
+    delivery_info_text: '영등동 번화가 1~3층 대형 매장 직접 쇼핑',
+    solo_spec_summary: '텀블러, 실내화, 멀티탭, 수납포켓 등 개성 있고 깔끔한 자취 및 생활 잡화 구매처 (영등동 1~3층 대형 매장)',
+    business_hours_text: '매일 10:30 ~ 22:00 (연중무휴)',
+    today_status: '영업 중 · 22:00 마감 (텀블러/멀티탭/자취인테리어 + 다이로움 10%)',
+    time_score: 4.0,
+    stability_score: 5.0,
+    reviews: [
+      {
+        id: 'rev-artbox-01',
+        nickname: '영등동자취생',
+        verification_tier: 'WONKWANG_STUDENT',
+        overall_rating: 4.6,
+        content: '원룸 책상 꾸밀 때 필요한 멀티탭이랑 실내화, 침대 헤드 수납포켓 샀는데 디자인도 예쁘고 튼튼해요. 1~3층짜리 대형 매장이라 구경하기도 좋고 다이로움 결제도 됩니다!',
+        created_at: '2026-10-23'
+      }
+    ],
+    badges: [
+      { tag_slug: 'solo_lifestyle_goods', display_name: '#텀블러_실내화_멀티탭', polarity: 'POSITIVE' },
+      { tag_slug: 'storage_pockets', display_name: '#수납포켓_데스크정리', polarity: 'POSITIVE' },
+      { tag_slug: 'daroum_10pct', display_name: '#다이로움10%환급', polarity: 'POSITIVE' }
+    ]
+  },
+  {
+    id: 'oliveyoung-iksan-main',
+    category_id: 4,
+    category_slug: 'essentials',
+    category_name: '올리브영 / 생활잡화',
+    name: '올리브영 익산점 (위생·바디 생필품)',
+    road_address: '전북특별자치도 익산시 무왕로 1062 (영등동 836-1)',
+    dong: '영등동',
+    lat: 35.9572,
+    lng: 126.9712,
+    phone: '063-832-5290',
+    is_daroum_accepted: 1,
+    daroum_cashback_rate: 0.10,
+    has_solo_seats: 1,
+    is_single_order_allowed: 1,
+    takeout_available: 1,
+    single_portion_takeout: 1,
+    takeout_discount_text: 'CJ ONE 포인트 적립 + 익산다이로움 10% 캐시백 적용',
+    delivery_available: 1,
+    min_delivery_amount: 20000,
+    delivery_fee: 2500,
+    delivery_info_text: '올리브영 오늘드림 3시간 즉시 배송 지원',
+    solo_spec_summary: '샴푸, 바디워시, 치약/칫솔, 섬유탈취제 등 위생 및 바디 관련 생필품을 급하게 살 때 유용한 곳 (영등동 중심 상권 대형 매장)',
+    business_hours_text: '매일 10:00 ~ 22:30 (연중무휴)',
+    today_status: '영업 중 · 22:30 마감 (샴푸/바디워시/섬유탈취제 + 다이로움 10%)',
+    time_score: 4.0,
+    stability_score: 5.0,
+    reviews: [
+      {
+        id: 'rev-olive-main-01',
+        nickname: '대학로자취생',
+        verification_tier: 'WONKWANG_STUDENT',
+        overall_rating: 4.8,
+        content: '샴푸랑 칫솔, 섬유탈취제 떨어졌을 때 밤 10시 넘어서도 바로 살 수 있어서 자취생 구원투수예요. 세일 기간에 다이로움 카드로 결제하면 10% 페이백까지 받아서 개이득입니다.',
+        created_at: '2026-10-24'
+      }
+    ],
+    badges: [
+      { tag_slug: 'shampoo_body_wash', display_name: '#샴푸_바디워시_치약칫솔', polarity: 'POSITIVE' },
+      { tag_slug: 'fabric_deodorant', display_name: '#섬유탈취제_위생생필품', polarity: 'POSITIVE' },
+      { tag_slug: 'daroum_10pct', display_name: '#다이로움10%환급', polarity: 'POSITIVE' }
+    ]
   }
 ];
 
@@ -1027,6 +1293,8 @@ export function filterAndSortMockPlaces({
       actualWalkMeters: walkingInfo.actualWalkMeters,
       distanceKm,
       walkMinutes: walkingInfo.walkMinutes,
+      driveMinutes: walkingInfo.driveMinutes,
+      actualDriveMeters: walkingInfo.actualDriveMeters,
       walkSteps: walkingInfo.walkSteps,
       caloriesKcal: walkingInfo.caloriesKcal,
       taxiFare: walkingInfo.taxiFare,

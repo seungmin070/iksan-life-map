@@ -19,7 +19,8 @@ import {
   Printer,
   HeartPulse,
   Heart,
-  Home
+  Home,
+  Car
 } from 'lucide-react';
 
 const CATEGORY_ICONS = {
@@ -94,19 +95,26 @@ export default function FloatingMapCard({
         <span>{place.road_address}</span>
       </p>
 
-      {/* 3. 자취방 기준 실시간 도보 시간 및 거리 */}
+      {/* 3. 자취방 기준 실시간 도보/차량 시간 및 정확한 거리 */}
       <div className="floating-distance-box">
         <div className="dist-origin-row">
           <Home size={12} color="#0284c7" />
           <span className="dist-label">출발지: {originName}</span>
         </div>
         <div className="dist-metrics-row">
-          <strong className="dist-walk-highlight">
-            🚶 도보 약 {place.walkMinutes || 1}분
-          </strong>
-          <span className="dist-meters-sub">
-            ({place.actualWalkMeters ? `${place.actualWalkMeters}m` : `${place.distanceKm || 0.1}km`})
-          </span>
+          <div className="dist-time-item walk">
+            <span className="dist-walk-highlight">
+              🚶 도보 약 {place.walkMinutes || 1}분
+            </span>
+            <span className="dist-meters-sub">
+              ({place.actualWalkMeters ? (place.actualWalkMeters >= 1000 ? `${(place.actualWalkMeters / 1000).toFixed(1)}km` : `${place.actualWalkMeters}m`) : `${place.distanceKm || 0.1}km`})
+            </span>
+          </div>
+          <div className="dist-time-item drive">
+            <span className="dist-drive-highlight">
+              🚗 차로 약 {place.driveMinutes || 3}분
+            </span>
+          </div>
           {place.walkSteps && (
             <span className="dist-steps-badge">
               <Footprints size={11} /> 약 {place.walkSteps.toLocaleString()}보
@@ -115,14 +123,21 @@ export default function FloatingMapCard({
         </div>
       </div>
 
-      {/* 4. 익산다로움 10% 혜택 배너 */}
+      {/* 4. 익산다로움 10% 캐시백 상세 안내 배너 */}
       <div className={`daroum-banner ${isDaroum ? 'daroum-active' : 'daroum-inactive'}`}>
         <CreditCard size={14} />
-        <span>
-          {isDaroum
-            ? '익산다로움 10% 캐시백 즉시 환급 가맹점'
-            : '대기업 직영 대형마트 (다로움 10% 제외 매장)'}
-        </span>
+        <div className="daroum-banner-text">
+          <strong>
+            {isDaroum
+              ? '익산다이로움 10% 즉시 캐시백 가맹점'
+              : '대기업 직영 대형마트 (다이로움 10% 제외 매장)'}
+          </strong>
+          <span className="daroum-banner-sub">
+            {isDaroum
+              ? '1만원 결제 시 1,000원 환급 · 5만원 장보기 시 5,000원 즉시 캐시백 (월 최대 3만원 세이브)'
+              : '연매출 30억원 초과 대형마트 매장으로 다이로움 캐시백 미적용 대상입니다.'}
+          </span>
+        </div>
       </div>
 
       {/* 5. 3개 축 지표 미니 바 */}

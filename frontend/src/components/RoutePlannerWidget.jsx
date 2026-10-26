@@ -214,51 +214,75 @@ export default function RoutePlannerWidget({
           {/* 실시간 계산 결과 카드 (네이버 지도 스타일) */}
           {destination && (
             <div className="planner-result-card">
-              <div className="result-main-row">
-                <div className="result-stat-group">
+              {/* 3대 핵심 이동 지표: 도보 시간, 차량 시간, 실측 거리 */}
+              <div className="planner-stats-grid">
+                <div className="result-stat-box walk-box">
                   <span className="result-stat-label">
-                    <Clock size={13} color="var(--primary)" />
-                    <span>실제 예상 도보</span>
+                    <Footprints size={13} color="var(--primary)" />
+                    <span>도보 이동 시</span>
                   </span>
                   <div className="result-time-val">
                     <span>도보 약 {walkingInfo.walkMinutes}</span>
                     <span className="unit">분</span>
                   </div>
+                  <span className="result-sub-metric">약 {walkingInfo.walkSteps.toLocaleString()}보 · {walkingInfo.caloriesKcal || 20}kcal</span>
                 </div>
 
-                <div className="result-stat-group" style={{ textAlign: 'right' }}>
-                  <span className="result-stat-label" style={{ justifyContent: 'flex-end' }}>
-                    <MapPin size={13} color="#6366f1" />
-                    <span>실제 보행 거리</span>
+                <div className="result-stat-box drive-box">
+                  <span className="result-stat-label">
+                    <Car size={13} color="#6366f1" />
+                    <span>차량 이동 시</span>
                   </span>
-                  <div className="result-dist-val">
+                  <div className="result-time-val" style={{ color: '#6366f1' }}>
+                    <span>차로 약 {walkingInfo.driveMinutes || 3}</span>
+                    <span className="unit">분</span>
+                  </div>
+                  <span className="result-sub-metric">택시 약 {walkingInfo.taxiFare.toLocaleString()}원</span>
+                </div>
+
+                <div className="result-stat-box dist-box">
+                  <span className="result-stat-label">
+                    <MapPin size={13} color="#059669" />
+                    <span>정확한 이동 거리</span>
+                  </span>
+                  <div className="result-dist-val" style={{ color: '#059669' }}>
                     {walkingInfo.actualWalkMeters >= 1000
                       ? `${(walkingInfo.actualWalkMeters / 1000).toFixed(1)} km`
                       : `${walkingInfo.actualWalkMeters} m`}
                   </div>
+                  <span className="result-sub-metric">실제 도로망 기준</span>
                 </div>
               </div>
 
-              {/* 서브 지표: 걸음수, 칼로리, 택시비, 다로움 혜택 */}
-              <div className="result-chips-row">
-                <div className="result-chip">
-                  <Footprints size={12} color="#0d9488" />
-                  <span>약 {walkingInfo.walkSteps.toLocaleString()}보</span>
-                </div>
-                <div className="result-chip">
-                  <Flame size={12} color="#f97316" />
-                  <span>약 {walkingInfo.caloriesKcal || 20} kcal</span>
-                </div>
-                <div className="result-chip">
-                  <Car size={12} color="#6366f1" />
-                  <span>택시 약 {walkingInfo.taxiFare.toLocaleString()}원</span>
-                </div>
-                <div className={`result-chip ${destination.is_daroum_accepted ? 'daroum-active' : ''}`}>
-                  <Sparkles size={12} color={destination.is_daroum_accepted ? '#ea580c' : '#94a3b8'} />
-                  <span>
-                    {destination.is_daroum_accepted ? '익산다로움 10% 환급' : '다로움 제외 매장'}
-                  </span>
-                </div>
+              {/* 익산다이로움 10% 환급 혜택 구체적 시뮬레이션 배너 */}
+              <div className={`daroum-benefit-calc-box ${destination.is_daroum_accepted ? 'accepted' : 'excluded'}`}>
+                {destination.is_daroum_accepted ? (
+                  <>
+                    <div className="daroum-calc-header">
+                      <Sparkles size={14} color="#ea580c" />
+                      <strong>익산다이로움 10% 즉시 환급 가맹점</strong>
+                      <span className="calc-badge-live">10% 캐시백 적용</span>
+                    </div>
+                    <p className="daroum-calc-desc">
+                      💰 <strong>1만원 결제 시 1,000원</strong> 즉시 캐시백 / <strong>5만원 장보기 시 5,000원</strong> 환급!
+                      <br />
+                      <span className="daroum-calc-sub">
+                        (월 충전한도 30만원 결제 시 <strong>매월 최대 30,000원 자취비 즉시 세이브</strong>)
+                      </span>
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <div className="daroum-calc-header">
+                      <Info size={14} color="#dc2626" />
+                      <strong>익산다이로움 10% 제외 매장 안내</strong>
+                      <span className="calc-badge-excluded">다이로움 미적용</span>
+                    </div>
+                    <p className="daroum-calc-desc">
+                      🚫 대기업 직영 및 연매출 30억원 초과 대형마트 매장으로 <strong>다이로움 10% 캐시백이 제외</strong>됩니다. 자체 멤버십 적립을 이용하세요.
+                    </p>
+                  </>
+                )}
               </div>
 
               {/* 하단: 한눈에 보기 & 외부 길찾기 버튼들 */}

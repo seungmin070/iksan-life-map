@@ -126,7 +126,7 @@ export default function PlaceCard({
             <MapPin size={12} color="var(--primary)" />
             <span>
               {referenceGateName} 기준{' '}
-              <strong className="distance-highlight">{displayDistanceKm} km</strong> (도보 약 {walkMinutes}분)
+              <strong className="distance-highlight">{displayDistanceKm} km</strong> (🚶 도보 약 {walkMinutes}분 · 🚗 차로 약 {place.driveMinutes || Math.max(2, Math.round(Number(displayDistanceKm) * 2.5))}분)
             </span>
           </div>
         </div>
@@ -206,10 +206,14 @@ export default function PlaceCard({
           </span>
         )}
 
-        {/* 익산다로움 10% 캐시백 배지 */}
-        {is_daroum_accepted === 1 && (
-          <span className="spec-chip daroum-chip" title="Iksan Daroum 10% Cash-Back Accepted">
-            <CreditCard size={11} /> #익산다로움_10%환급
+        {/* 익산다이로움 10% 캐시백 배지 */}
+        {is_daroum_accepted === 1 ? (
+          <span className="spec-chip daroum-chip" title="익산다이로움 10% 캐시백 가맹점 (1만원 결제 시 1,000원 즉시 환급)">
+            <CreditCard size={11} /> #익산다이로움_10%환급
+          </span>
+        ) : (
+          <span className="spec-chip takeout-no" title="대기업 직영 연매출 30억원 초과 대형마트 (다이로움 캐시백 제외)">
+            <CreditCard size={11} /> #다이로움제외(대형마트)
           </span>
         )}
 

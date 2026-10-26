@@ -2746,4 +2746,144 @@ html.dark .cat-pill.cat-essentials {
   color: var(--text-secondary);
 }
 
+/* Planner 3-Stat Grid: Walking, Driving, Distance */
+.planner-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 0.75rem;
+}
+
+.result-stat-box {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 0.65rem 0.6rem;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.2s ease;
+}
+
+.result-stat-box:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+
+.result-stat-box.walk-box {
+  border-left: 3px solid var(--primary);
+}
+
+.result-stat-box.drive-box {
+  border-left: 3px solid #6366f1;
+}
+
+.result-stat-box.dist-box {
+  border-left: 3px solid #059669;
+}
+
+.result-sub-metric {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  margin-top: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Dairoum 10% Benefit Calculator Box */
+.daroum-benefit-calc-box {
+  border-radius: 10px;
+  padding: 0.75rem 0.85rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  transition: all 0.2s ease;
+}
+
+.daroum-benefit-calc-box.accepted {
+  background: linear-gradient(135deg, rgba(234, 88, 12, 0.08), rgba(249, 115, 22, 0.04));
+  border: 1px solid rgba(234, 88, 12, 0.25);
+  color: var(--text-primary);
+}
+
+.daroum-benefit-calc-box.excluded {
+  background: rgba(220, 38, 38, 0.05);
+  border: 1px solid rgba(220, 38, 38, 0.2);
+  color: var(--text-primary);
+}
+
+.daroum-calc-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  font-weight: 800;
+  margin-bottom: 4px;
+}
+
+.calc-badge-live {
+  margin-left: auto;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #ea580c;
+  background: rgba(234, 88, 12, 0.12);
+  padding: 1px 6px;
+  border-radius: 4px;
+  border: 1px solid rgba(234, 88, 12, 0.3);
+}
+
+.calc-badge-excluded {
+  margin-left: auto;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #dc2626;
+  background: rgba(220, 38, 38, 0.1);
+  padding: 1px 6px;
+  border-radius: 4px;
+  border: 1px solid rgba(220, 38, 38, 0.25);
+}
+
+.daroum-calc-desc {
+  margin: 0;
+  font-size: 0.76rem;
+  color: var(--text-secondary);
+}
+
+.daroum-calc-sub {
+  color: #ea580c;
+  font-weight: 600;
+}
+
+/* Floating Card distance item styles */
+.dist-time-item {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.dist-drive-highlight {
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: #6366f1;
+  background: rgba(99, 102, 241, 0.08);
+  padding: 2px 7px;
+  border-radius: 6px;
+  border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+.daroum-banner-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+}
+
+.daroum-banner-sub {
+  font-size: 0.7rem;
+  font-weight: 500;
+  opacity: 0.9;
+  line-height: 1.3;
+}
+
+
 
