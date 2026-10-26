@@ -14,11 +14,14 @@ import {
   INITIAL_CAMPUS_NODES,
   INITIAL_CATEGORIES,
   INITIAL_TAGS,
+  VIRTUAL_STUDIO_ROOMS,
   filterAndSortMockPlaces
 } from './data/mockData';
+import { List, X, Store, Navigation } from 'lucide-react';
 
 export default function App() {
-  // 1. 초기 마스터 데이터: embedded mock dataset으로 초기화 (Vercel 배포 시 즉시 렌더링)
+  // 1. 초기 마스터 데이터 (자취방 목록, 캠퍼스 거점, 카테고리)
+  const [studioRooms, setStudioRooms] = useState(VIRTUAL_STUDIO_ROOMS);
   const [campusNodes, setCampusNodes] = useState(INITIAL_CAMPUS_NODES);
   const [categories, setCategories] = useState(INITIAL_CATEGORIES);
   const [tagsMaster, setTagsMaster] = useState(INITIAL_TAGS);
@@ -40,60 +43,63 @@ export default function App() {
     }
   }, [isDarkMode]);
 
-  // 카카오 지도 API 키 관리 (로컬스토리지 및 환경변수 지원)
+  // 카카오 지도 API 키 관리
   const [kakaoKey, setKakaoKey] = useState(() => {
     return localStorage.getItem('kakao_js_key') || import.meta.env.VITE_KAKAO_JS_KEY || '';
   });
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
 
-  // 메인 지도 진입 여부 (랜딩 페이지 덮개 상태)
+  // 메인 지도 진입 여부
   const [showMap, setShowMap] = useState(false);
 
+  // 2. 출발지 (내 자취방) 상태 관리: 기본값은 원광대 대학로 1길 원룸타운
+  const [selectedOriginId, setSelectedOriginId] = useState('studio-daehakro');
+  const [userGpsLocation, setUserGpsLocation] = useState(null);
+
   // 필터 상태
-  const [selectedGateId, setSelectedGateId] = useState(1); // 기본: 원광대학교병원 (id: 1)
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [daroumOnly, setDaroumOnly] = useState(false);
   const [soloOnly, setSoloOnly] = useState(false);
   const [openLateOnly, setOpenLateOnly] = useState(false);
   const [essentialOnly, setEssentialOnly] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState('score');
+  const [sortBy, setSortBy] = useState('distance'); // 기본: 가까운 거리순
 
-  const handleEnterMap = useCallback((options = {}) => {
-    if (options.category) setSelectedCategory(options.category);
-    if (options.gateNodeId) setSelectedGateId(options.gateNodeId);
-    if (options.daroumOnly) setDaroumOnly(true);
-    if (options.soloOnly) setSoloOnly(true);
-    if (options.openLateOnly) setOpenLateOnly(true);
-    if (options.essentialOnly) setEssentialOnly(true);
-    if (options.sortBy) setSortBy(options.sortBy);
-    setShowMap(true);
-  }, []);
+  // 3. UI 레이아웃 상태: 지도가 기본 전체 화면으로 쾌적하게 보이도록 사이드바는 기본 닫힘 (false)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isRoutePlannerOpen, setIsRoutePlannerOpen] = useState(false);
 
-  // 데이터 상태: 초기 렌더링 시 embedded mock data를 즉시 계산하여 빈 화면(0 facilities) 방지
+  // 4. 지도 선택 점포 상태: 마커를 클릭했을 때만 오버레이 팝업이 뜨도록 초기값 null
+  const [selectedPlace, setSelectedPlace] = useState(null);
+
+  // 길찾기 목적지 점포
+  const [destinationPlace, setDestinationPlace] = useState(null);
+
+  // 지도 경로 화면 맞춤 타깃
+  const [routeBoundsTarget, setRouteBoundsTarget] = useState(null);
+
+  // 모달 상태
+  const [detailModalPlace, setDetailModalPlace] = useState(null);
+  const [reviewModalPlace, setReviewModalPlace] = useState(null);
+
+  // 데이터 상태: 초기 embedded mock dataset 로드
   const initialPlacesList = useMemo(() => {
     return filterAndSortMockPlaces({
       category: 'all',
-      gateNodeId: 1,
-      sortBy: 'score'
+      originStudioId: 'studio-daehakro',
+      sortBy: 'distance'
     });
   }, []);
 
   const [places, setPlaces] = useState(initialPlacesList);
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedPlace, setSelectedPlace] = useState(initialPlacesList[0] || null);
 
-  // 사이드바 목록 접기/펼치기 (지도 100% 와이드 뷰 토글)
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-
-  // 실시간 도보 길찾기 계산기 모달/위젯 상태
-  const [isRoutePlannerOpen, setIsRoutePlannerOpen] = useState(false);
-
-  // GPS 사용자 현재 위치
-  const [userGpsLocation, setUserGpsLocation] = useState(null);
-
-  // 길찾기 대상 목적지 점포
-  const [destinationPlace, setDestinationPlace] = useState(null);
+  // 초기 도착지 설정
+  useEffect(() => {
+    if (initialPlacesList.length > 0 && !destinationPlace) {
+      setDestinationPlace(initialPlacesList[0]);
+    }
+  }, [initialPlacesList, destinationPlace]);
 
   // GPS 실시간 내 위치 감지 핸들러
   const handleRequestGps = useCallback(() => {
@@ -116,11 +122,28 @@ export default function App() {
     );
   }, []);
 
-  // 모달 상태
-  const [detailModalPlace, setDetailModalPlace] = useState(null);
-  const [reviewModalPlace, setReviewModalPlace] = useState(null);
+  // 출발지 선택 핸들러
+  const handleSelectOrigin = useCallback((originId) => {
+    if (originId === 'gps') {
+      handleRequestGps();
+    } else {
+      setUserGpsLocation(null);
+      setSelectedOriginId(originId);
+    }
+  }, [handleRequestGps]);
 
-  // 1. 초기 마스터 데이터 로드 (백엔드 API가 있으면 연동, 없으면 embedded mock 유지)
+  // 경로 한눈에 보기 핸들러
+  const handleFitRouteBounds = useCallback((originLat, originLng, destLat, destLng) => {
+    setRouteBoundsTarget({
+      originLat,
+      originLng,
+      destLat,
+      destLng,
+      timestamp: Date.now()
+    });
+  }, []);
+
+  // 1. 초기 마스터 데이터 로드 (백엔드 API가 있으면 연동)
   useEffect(() => {
     async function loadMasterData() {
       try {
@@ -143,14 +166,13 @@ export default function App() {
           if (tagsData.success && tagsData.data?.length > 0) setTagsMaster(tagsData.data);
         }
       } catch (err) {
-        // Vercel 정적 배포 환경에서는 초기 embedded mock 데이터 그대로 사용
         console.info('[Offline/Vercel Mode] Using embedded master dataset');
       }
     }
     loadMasterData();
   }, []);
 
-  // 2. 장소 목록 조회 (백엔드 API 호출 시도 -> 실패 또는 0건 반환 시 즉시 embedded mock dataset 필터링으로 Fallback)
+  // 2. 장소 목록 조회 및 실시간 도보 거리 계산
   const fetchPlaces = useCallback(async () => {
     setIsLoading(true);
     let apiSuccess = false;
@@ -162,7 +184,6 @@ export default function App() {
       if (soloOnly) params.append('soloOnly', 'true');
       if (openLateOnly) params.append('openLate', 'true');
       if (essentialOnly) params.append('quickFilter', 'essential');
-      if (selectedGateId) params.append('gateNodeId', selectedGateId);
       if (searchQuery.trim()) params.append('search', searchQuery.trim());
       if (sortBy) params.append('sortBy', sortBy);
 
@@ -171,17 +192,13 @@ export default function App() {
         const data = await res.json();
         if (data.success && Array.isArray(data.data) && data.data.length > 0) {
           setPlaces(data.data);
-          if (!selectedPlace || !data.data.some((p) => p.id === selectedPlace.id)) {
-            setSelectedPlace(data.data[0]);
-          }
           apiSuccess = true;
         }
       }
     } catch (err) {
-      // Vercel 클라우드 환경에서는 Express API가 로컬호스트에 없으므로 의도된 fallback 실행
+      // Vercel Fallback
     }
 
-    // 백엔드 API 미구동 상태(Vercel 등)이거나 오류 시 embedded mock dataset 즉시 로드
     if (!apiSuccess) {
       const mockResult = filterAndSortMockPlaces({
         category: selectedCategory,
@@ -189,29 +206,25 @@ export default function App() {
         soloOnly,
         openLateOnly,
         essentialOnly,
-        gateNodeId: selectedGateId,
+        originStudioId: selectedOriginId,
+        customOrigin: userGpsLocation,
         searchQuery,
         sortBy,
         campusNodes,
-        customOrigin: userGpsLocation
+        studioRooms
       });
 
       setPlaces(mockResult);
-      if (mockResult.length > 0) {
-        if (!selectedPlace || !mockResult.some((p) => p.id === selectedPlace.id)) {
-          setSelectedPlace(mockResult[0]);
-        }
-      }
     }
 
     setIsLoading(false);
-  }, [selectedCategory, daroumOnly, soloOnly, openLateOnly, essentialOnly, selectedGateId, searchQuery, sortBy, selectedPlace, campusNodes, userGpsLocation]);
+  }, [selectedCategory, daroumOnly, soloOnly, openLateOnly, essentialOnly, selectedOriginId, userGpsLocation, searchQuery, sortBy, campusNodes, studioRooms]);
 
   useEffect(() => {
     fetchPlaces();
   }, [fetchPlaces]);
 
-  // 3. API 키 저장 핸들러
+  // API 키 저장 핸들러
   const handleSaveKakaoKey = (newKey) => {
     if (newKey) {
       localStorage.setItem('kakao_js_key', newKey);
@@ -222,10 +235,10 @@ export default function App() {
     }
   };
 
-  // 4. 상세 모달 열기 핸들러 (API 호출 실패 시 현재 place 객체 직접 사용)
+  // 상세 모달 열기 핸들러
   const handleOpenDetail = async (place) => {
     try {
-      const res = await fetch(`/api/places/${place.id}?gateNodeId=${selectedGateId}`);
+      const res = await fetch(`/api/places/${place.id}`);
       if (res.ok) {
         const data = await res.json();
         if (data.success && data.data) {
@@ -233,40 +246,12 @@ export default function App() {
           return;
         }
       }
-    } catch (err) {
-      // Offline fallback
-    }
-    // API가 없거나 실패하더라도 내장 mock 데이터에 모든 리뷰와 상세 스펙이 포함되어 있으므로 즉시 모달 표시
+    } catch (err) {}
     setDetailModalPlace(place);
   };
 
-  // 5. 카카오 실시간 검색 결과 장소 클릭 시 연동
+  // 카카오 실시간 검색 결과 장소 클릭 연동
   const handleSelectKakaoPlace = async (kakaoItem) => {
-    try {
-      const res = await fetch('/api/places/sync-kakao', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          kakaoPlace: kakaoItem,
-          gateNodeId: selectedGateId
-        })
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        if (data.success && data.data) {
-          const syncedPlace = data.data;
-          setSelectedPlace(syncedPlace);
-          setDetailModalPlace(syncedPlace);
-          fetchPlaces();
-          return;
-        }
-      }
-    } catch (err) {
-      console.warn('Kakao place sync error', err);
-    }
-
-    // 오프라인 fallback: 기본 장소 객체 생성
     const fallbackPlace = {
       id: 'kakao-' + kakaoItem.id,
       name: kakaoItem.place_name,
@@ -276,8 +261,8 @@ export default function App() {
       lat: parseFloat(kakaoItem.y),
       lng: parseFloat(kakaoItem.x),
       phone: kakaoItem.phone,
-      distanceKm: 1.5,
-      walkMinutes: 20,
+      distanceKm: 1.2,
+      walkMinutes: 15,
       access_score: 4.0,
       time_score: 4.0,
       stability_score: 4.0,
@@ -288,8 +273,29 @@ export default function App() {
       reviews: []
     };
     setSelectedPlace(fallbackPlace);
-    setDetailModalPlace(fallbackPlace);
+    setDestinationPlace(fallbackPlace);
   };
+
+  const handleEnterMap = useCallback((options = {}) => {
+    if (options.category) setSelectedCategory(options.category);
+    if (options.originStudioId) setSelectedOriginId(options.originStudioId);
+    if (options.daroumOnly) setDaroumOnly(true);
+    if (options.soloOnly) setSoloOnly(true);
+    if (options.openLateOnly) setOpenLateOnly(true);
+    if (options.essentialOnly) setEssentialOnly(true);
+    if (options.sortBy) setSortBy(options.sortBy);
+    setShowMap(true);
+  }, []);
+
+  // 현재 유효한 출발지 명칭 구하기
+  const currentOriginName = useMemo(() => {
+    if (userGpsLocation) return '내 현재 위치 (GPS)';
+    const studio = studioRooms.find((s) => s.id === selectedOriginId);
+    if (studio) return studio.shortName;
+    const node = campusNodes.find((n) => n.id === Number(selectedOriginId));
+    if (node) return node.node_name.split(' ')[0];
+    return '대학로 자취방';
+  }, [selectedOriginId, userGpsLocation, studioRooms, campusNodes]);
 
   if (!showMap) {
     return (
@@ -303,14 +309,12 @@ export default function App() {
 
   return (
     <div className={`app-container ${isDarkMode ? 'dark-mode' : ''}`}>
-      {/* 글로벌 네비게이션 헤더 */}
+      {/* 1. 상단 글로벌 네비게이션 헤더 */}
       <Navbar
+        studioRooms={studioRooms}
         campusNodes={campusNodes}
-        selectedGateId={selectedGateId}
-        onSelectGate={(id) => {
-          setUserGpsLocation(null);
-          setSelectedGateId(id);
-        }}
+        selectedOriginId={selectedOriginId}
+        onSelectOrigin={handleSelectOrigin}
         userGpsLocation={userGpsLocation}
         onRequestGps={handleRequestGps}
         isSidebarOpen={isSidebarOpen}
@@ -332,9 +336,25 @@ export default function App() {
         onOpenLanding={() => setShowMap(false)}
       />
 
-      {/* 메인 뷰: 좌측 장소 리스트 + 우측 인터랙티브 지도 */}
+      {/* 2. 메인 화면: 지도가 100% 전체 영역을 시원하게 차지 */}
       <main className="main-content">
-        <aside className={`sidebar ${!isSidebarOpen ? 'collapsed' : ''}`}>
+        {/* 접이식 사이드바 (Floating Drawer): 기본 닫힘, 필요 시 좌측에서 슬라이드 인 */}
+        <aside className={`sidebar-floating-drawer ${isSidebarOpen ? 'open' : 'closed'}`}>
+          <div className="sidebar-drawer-header">
+            <div className="sidebar-drawer-title">
+              <Store size={18} color="var(--primary)" />
+              <span>익산 자취 편의 점포 ({places.length})</span>
+            </div>
+            <button
+              className="sidebar-close-btn"
+              onClick={() => setIsSidebarOpen(false)}
+              aria-label="목록 접기"
+              title="목록 접고 지도 넓게 보기"
+            >
+              <X size={18} />
+            </button>
+          </div>
+
           {/* 필터 & 검색 바 */}
           <FilterBar
             categories={categories}
@@ -355,11 +375,11 @@ export default function App() {
             onToggleEssential={() => setEssentialOnly(!essentialOnly)}
           />
 
-          {/* 장소 카드 목록 스크롤 뷰 */}
+          {/* 장소 카드 스크롤 목록 */}
           <div className="places-list">
             {isLoading ? (
               <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-muted)' }}>
-                <p>원광대 & 익산 1인가구 맞춤 편의 정보를 불러오는 중...</p>
+                <p>자취방 기준 실시간 도보 거리를 계산하는 중...</p>
               </div>
             ) : places.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-muted)' }}>
@@ -398,75 +418,97 @@ export default function App() {
           </div>
         </aside>
 
-        {/* 인터랙티브 지도 영역 래퍼 */}
+        {/* 사이드바가 닫혀 있을 때 화면 좌측에 노출되는 원클릭 열기 플로팅 버튼 */}
+        {!isSidebarOpen && (
+          <button
+            className="floating-sidebar-toggle-btn"
+            onClick={() => setIsSidebarOpen(true)}
+            title="편의 점포 목록 열기"
+          >
+            <List size={16} />
+            <span>점포 목록 ({places.length})</span>
+          </button>
+        )}
+
+        {/* 3. 지도 영역: 100% 가득 찬 인터랙티브 뷰 */}
         <div className="map-view-wrapper">
-          {/* 맞춤형 도보 길찾기 계산기 (네이버 지도 스타일) */}
+          {/* 네이버 지도 스타일 도보 경로 계산기 위젯 (상단 플로팅) */}
           {isRoutePlannerOpen && (
             <RoutePlannerWidget
+              studioRooms={studioRooms}
               campusNodes={campusNodes}
               places={places}
-              selectedOriginNodeId={userGpsLocation ? 'gps' : selectedGateId}
-              onSelectOriginNode={(val) => {
-                if (val === 'gps') {
-                  handleRequestGps();
-                } else {
-                  setUserGpsLocation(null);
-                  setSelectedGateId(Number(val));
-                }
-              }}
+              selectedOriginId={userGpsLocation ? 'gps' : selectedOriginId}
+              onSelectOrigin={handleSelectOrigin}
               userGpsLocation={userGpsLocation}
               onRequestGps={handleRequestGps}
-              selectedDestinationPlace={destinationPlace || selectedPlace}
+              selectedDestinationPlace={destinationPlace || places[0]}
               onSelectDestinationPlace={(p) => setDestinationPlace(p)}
+              onFitRouteBounds={handleFitRouteBounds}
               onClose={() => setIsRoutePlannerOpen(false)}
             />
           )}
 
-          {/* 마커 클릭 시 지도 위에 즉각 표시되는 플로팅 인포 카드 */}
+          {/* 마커 클릭 시만 뜨는 작고 깔끔한 오버레이 팝업 카드 (우측 상단 'X' 버튼 제공) */}
           {selectedPlace && (
             <FloatingMapCard
               place={selectedPlace}
-              originName={userGpsLocation ? '내 현재 위치' : (campusNodes.find((n) => n.id === selectedGateId)?.node_name?.split(' ')[0] || '원광대병원')}
+              originName={currentOriginName}
               onClose={() => setSelectedPlace(null)}
               onOpenDetail={handleOpenDetail}
               onSetAsDestination={(p) => {
                 setDestinationPlace(p);
                 setIsRoutePlannerOpen(true);
+                handleFitRouteBounds(
+                  userGpsLocation?.lat || studioRooms.find(s => s.id === selectedOriginId)?.lat || 35.9692,
+                  userGpsLocation?.lng || studioRooms.find(s => s.id === selectedOriginId)?.lng || 126.9575,
+                  p.lat,
+                  p.lng
+                );
               }}
             />
           )}
 
-          {/* 지도 렌더링 (카카오 키가 있으면 카카오 지도, 없으면 내장 Leaflet 지도) */}
+          {/* 인터랙티브 지도 렌더링 */}
           {kakaoKey ? (
             <KakaoMapView
               kakaoKey={kakaoKey}
               places={places}
+              studioRooms={studioRooms}
               campusNodes={campusNodes}
-              selectedGateId={selectedGateId}
+              selectedOriginId={selectedOriginId}
+              onSelectOrigin={handleSelectOrigin}
               selectedPlace={selectedPlace}
+              destinationPlace={destinationPlace}
               userGpsLocation={userGpsLocation}
               onSelectPlace={(place) => setSelectedPlace(place)}
               onSelectKakaoPlace={handleSelectKakaoPlace}
               searchQuery={searchQuery}
               onOpenApiKeyModal={() => setIsApiKeyModalOpen(true)}
+              routeBoundsTarget={routeBoundsTarget}
             />
           ) : (
-            <div style={{ flex: 1, position: 'relative', display: 'flex', flexDirection: 'column', width: '100%', height: '100%' }}>
+            <div style={{ flex: 1, position: 'relative', width: '100%', height: '100%' }}>
               <MapView
                 places={places}
+                studioRooms={studioRooms}
                 campusNodes={campusNodes}
-                selectedGateId={selectedGateId}
+                selectedOriginId={selectedOriginId}
+                onSelectOrigin={handleSelectOrigin}
                 selectedPlace={selectedPlace}
+                destinationPlace={destinationPlace}
                 userGpsLocation={userGpsLocation}
                 onSelectPlace={(place) => setSelectedPlace(place)}
+                routeBoundsTarget={routeBoundsTarget}
               />
-              {/* 카카오 지도 활성화 플로팅 칩 */}
+
+              {/* 카카오 지도 API 키 안내 칩 */}
               <div className="kakao-floating-chip">
                 <span style={{ fontSize: '1rem' }}>🗺️</span>
                 <div>
                   <strong>실제 카카오 지도 연동 가능</strong>
                   <p style={{ margin: 0, fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                    카카오 JavaScript API 키를 등록하면 익산 전체 실시간 POI 검색 및 고해상도 로드뷰를 이용할 수 있습니다.
+                    카카오 JavaScript API 키를 등록하면 익산 전체 실시간 로드뷰와 POI 검색을 이용할 수 있습니다.
                   </p>
                 </div>
                 <button
@@ -482,7 +524,7 @@ export default function App() {
         </div>
       </main>
 
-      {/* 상세 모달 */}
+      {/* 상세 후기 모달 */}
       {detailModalPlace && (
         <PlaceDetailModal
           place={detailModalPlace}
@@ -497,7 +539,7 @@ export default function App() {
           place={reviewModalPlace}
           tagsMaster={tagsMaster}
           onClose={() => setReviewModalPlace(null)}
-          onSubmitSuccess={(newReview) => {
+          onSubmitSuccess={() => {
             fetchPlaces();
             if (detailModalPlace && detailModalPlace.id === reviewModalPlace.id) {
               handleOpenDetail(reviewModalPlace);
@@ -506,7 +548,7 @@ export default function App() {
         />
       )}
 
-      {/* 카카오 API 키 관리 모달 */}
+      {/* 카카오 API 키 모달 */}
       {isApiKeyModalOpen && (
         <ApiKeyModal
           currentKey={kakaoKey}

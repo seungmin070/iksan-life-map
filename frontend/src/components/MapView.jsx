@@ -1,25 +1,31 @@
 import React, { useEffect, useRef } from 'react';
 import L from 'leaflet';
+import { VIRTUAL_STUDIO_ROOMS } from '../data/mockData';
 
 export default function MapView({
   places = [],
   campusNodes = [],
-  selectedGateId,
+  studioRooms = VIRTUAL_STUDIO_ROOMS,
+  selectedOriginId = 'studio-daehakro',
+  onSelectOrigin,
   selectedPlace,
+  destinationPlace,
   userGpsLocation,
-  onSelectPlace
+  onSelectPlace,
+  routeBoundsTarget
 }) {
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
   const markersRef = useRef([]);
+  const routeLineRef = useRef(null);
 
-  // 1. 지도 인스턴스 초기화 (원광대학교병원 및 대학로 중심 좌표: 35.9685, 126.9582)
+  // 1. 지도 인스턴스 초기화 (원광대학교 대학로 중심 좌표: 35.9692, 126.9575)
   useEffect(() => {
     if (!mapRef.current) return;
 
     if (!mapInstance.current) {
       const map = L.map(mapRef.current, {
-        center: [35.9685, 126.9582],
+        center: [35.9692, 126.9575],
         zoom: 14,
         zoomControl: true
       });
@@ -28,71 +34,101 @@ export default function MapView({
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
       }).addTo(map);
 
+      // 빈 지도 클릭 시 선택된 팝업 카드 닫기
+      map.on('click', () => {
+        if (onSelectPlace) {
+          onSelectPlace(null);
+        }
+      });
+
       mapInstance.current = map;
     }
   }, []);
 
-  // 2. 캠퍼스 기준 노드 및 장소 마커 렌더링
+  // 2. 가상 자취방, 기준 거점, 점포 마커 및 도보 경로 라인 렌더링
   useEffect(() => {
     const map = mapInstance.current;
     if (!map) return;
 
-    // 이전 마커 제거
+    // 이전 마커 및 경로선 제거
     markersRef.current.forEach((marker) => marker.remove());
     markersRef.current = [];
 
-    // A-1. GPS 사용자 현재 위치 마커 (있을 경우)
-    if (userGpsLocation) {
+    if (routeLineRef.current) {
+      routeLineRef.current.remove();
+      routeLineRef.current = null;
+    }
+
+    // A. 현재 선택된 출발지 좌표 확인
+    let currentOriginLat = 35.9692;
+    let currentOriginLng = 126.9575;
+
+    if (selectedOriginId === 'gps' && userGpsLocation) {
+      currentOriginLat = userGpsLocation.lat;
+      currentOriginLng = userGpsLocation.lng;
+
+      // 실시간 GPS 마커
       const gpsIcon = L.divIcon({
-        className: 'campus-gate-marker-wrapper',
+        className: 'gps-marker-wrapper',
         html: `
           <div class="campus-gate-pin selected" style="background:#0284c7;border-color:#38bdf8;">
             <div class="status-ring" style="border-color:rgba(56,189,248,0.7);animation:pulse-ring 1.5s infinite;"></div>
             <div class="pin-inner">
               <span>📍</span>
-              <span class="pin-title">내 현재 위치</span>
+              <span class="pin-title">내 GPS 위치</span>
             </div>
           </div>
         `,
-        iconSize: [130, 36],
-        iconAnchor: [65, 18]
+        iconSize: [120, 34],
+        iconAnchor: [60, 17]
       });
 
       const gpsMarker = L.marker([userGpsLocation.lat, userGpsLocation.lng], { icon: gpsIcon })
         .addTo(map)
-        .bindPopup('<b>📍 내 현재 위치 (GPS)</b><br>실시간 감지된 사용자 출발 지점');
-
+        .on('click', (e) => {
+          L.DomEvent.stopPropagation(e);
+          if (onSelectOrigin) onSelectOrigin('gps');
+        });
       markersRef.current.push(gpsMarker);
     }
 
-    // A-2. 기준 거점 (원광대병원 등) 마커 오버레이
-    campusNodes.forEach((node) => {
-      const isSelectedGate = node.id === selectedGateId && !userGpsLocation;
-      const isHosp = node.node_type === 'HOSPITAL';
+    // B. 가상의 자취방 포인트 마커들 렌더링 (익산 원광대 인근 대학생 실제 자취촌)
+    studioRooms.forEach((studio) => {
+      const isSelectedStudio = selectedOriginId === studio.id;
+      if (isSelectedStudio) {
+        currentOriginLat = studio.lat;
+        currentOriginLng = studio.lng;
+      }
 
-      const gateIcon = L.divIcon({
-        className: 'campus-gate-marker-wrapper',
+      const studioIcon = L.divIcon({
+        className: 'studio-marker-wrapper',
         html: `
-          <div class="campus-gate-pin ${isSelectedGate ? 'selected' : ''}">
-            <div class="status-ring hospital-ring"></div>
-            <div class="pin-inner">
-              <span>${isHosp ? '🏥' : '📍'}</span>
-              <span class="pin-title">${node.node_name.split(' ')[0]}</span>
-            </div>
+          <div class="custom-studio-pin ${isSelectedStudio ? 'active-origin' : ''}" style="
+            background: ${isSelectedStudio ? '#0284c7' : '#334155'};
+            border: ${isSelectedStudio ? '3px solid #38bdf8' : '2px solid #ffffff'};
+            box-shadow: ${isSelectedStudio ? '0 0 16px rgba(56,189,248,0.8), 0 4px 10px rgba(0,0,0,0.3)' : '0 2px 8px rgba(0,0,0,0.25)'};
+          ">
+            <span class="studio-emoji">🏠</span>
+            <span class="studio-title">${isSelectedStudio ? `[내 자취방] ${studio.shortName}` : studio.shortName}</span>
           </div>
         `,
-        iconSize: [130, 36],
-        iconAnchor: [65, 18]
+        iconSize: [isSelectedStudio ? 170 : 130, 32],
+        iconAnchor: [isSelectedStudio ? 85 : 65, 16]
       });
 
-      const gateMarker = L.marker([node.lat, node.lng], { icon: gateIcon })
+      const studioMarker = L.marker([studio.lat, studio.lng], { icon: studioIcon })
         .addTo(map)
-        .bindPopup(`<b>${node.node_name}</b><br>${node.description || '도보 측정 기준 거점'}`);
+        .on('click', (e) => {
+          L.DomEvent.stopPropagation(e);
+          if (onSelectOrigin) {
+            onSelectOrigin(studio.id);
+          }
+        });
 
-      markersRef.current.push(gateMarker);
+      markersRef.current.push(studioMarker);
     });
 
-    // B. 카테고리별 테마 비주얼 매핑
+    // C. 편의 시설 점포 마커 렌더링
     const getCatTheme = (slug) => {
       switch (slug) {
         case 'daiso':
@@ -116,9 +152,9 @@ export default function MapView({
       }
     };
 
-    // C. 장소 마커 렌더링 (커스텀 핀 & 바이브런트 상태 링)
     places.forEach((place) => {
       const isSelected = selectedPlace && selectedPlace.id === place.id;
+      const isDestination = destinationPlace && destinationPlace.id === place.id;
       const isCaution = place.caution_flags_count > 0;
       const theme = getCatTheme(place.category_slug);
       const markerColor = isCaution ? '#e11d48' : theme.bg;
@@ -126,39 +162,75 @@ export default function MapView({
       const placeIcon = L.divIcon({
         className: 'place-marker-wrapper',
         html: `
-          <div class="custom-place-pin ${isSelected ? 'active-pulse' : ''}" style="
+          <div class="custom-place-pin ${isSelected ? 'active-pulse' : ''} ${isDestination ? 'active-destination' : ''}" style="
             background: ${markerColor};
             box-shadow: ${isSelected ? `0 0 20px #facc15, 0 4px 14px rgba(0,0,0,0.3)` : `0 3px 10px rgba(0,0,0,0.2)`};
-            border: ${isSelected ? '3px solid #facc15' : '2px solid #ffffff'};
+            border: ${isSelected ? '3px solid #facc15' : isDestination ? '3px solid #38bdf8' : '2px solid #ffffff'};
           ">
             <div class="status-ring" style="border-color: ${theme.ring};"></div>
             <span class="pin-emoji">${theme.emoji}</span>
             <span class="pin-name">${place.name.split('(')[0].trim()}</span>
             <span class="pin-score">★ ${(place.composite_score || 0).toFixed(1)}</span>
             ${place.single_portion_takeout ? '<span class="pin-solo-badge">1인</span>' : ''}
+            ${place.is_daroum_accepted ? '<span class="pin-daroum-badge">10%</span>' : ''}
           </div>
         `,
-        iconSize: [160, 34],
-        iconAnchor: [80, 17]
+        iconSize: [165, 34],
+        iconAnchor: [82, 17]
       });
 
       const marker = L.marker([place.lat, place.lng], { icon: placeIcon })
         .addTo(map)
-        .on('click', () => {
+        .on('click', (e) => {
+          L.DomEvent.stopPropagation(e);
           onSelectPlace(place);
         });
 
       markersRef.current.push(marker);
     });
 
-    // 선택된 장소가 있으면 지도를 해당 위치로 부드럽게 줌/중심 이동 (Smooth zoom/center transition)
-    if (selectedPlace) {
+    // D. 출발지(자취방) - 도착지(목적지) 도보 경로선 그리기 (네이버 지도 스타일)
+    const targetDest = destinationPlace || selectedPlace;
+    if (targetDest && currentOriginLat && currentOriginLng) {
+      const routeLine = L.polyline(
+        [
+          [currentOriginLat, currentOriginLng],
+          [targetDest.lat, targetDest.lng]
+        ],
+        {
+          color: '#0d9488',
+          weight: 4,
+          dashArray: '8, 8',
+          opacity: 0.85
+        }
+      ).addTo(map);
+
+      routeLineRef.current = routeLine;
+    }
+
+    // 선택된 장소가 있고 경로 줌 요청이 없을 때 중심 이동
+    if (selectedPlace && !routeBoundsTarget) {
       map.flyTo([selectedPlace.lat, selectedPlace.lng], 16, {
-        duration: 0.8,
+        duration: 0.7,
         easeLinearity: 0.25
       });
     }
-  }, [places, campusNodes, selectedGateId, selectedPlace, userGpsLocation]);
+  }, [places, studioRooms, campusNodes, selectedOriginId, selectedPlace, destinationPlace, userGpsLocation]);
+
+  // E. 경로 한눈에 보기 바운드 맞춤
+  useEffect(() => {
+    if (!routeBoundsTarget || !mapInstance.current) return;
+    const { originLat, originLng, destLat, destLng } = routeBoundsTarget;
+    const bounds = L.latLngBounds([
+      [originLat, originLng],
+      [destLat, destLng]
+    ]);
+    mapInstance.current.fitBounds(bounds, {
+      padding: [80, 80],
+      maxZoom: 16,
+      animate: true
+    });
+  }, [routeBoundsTarget]);
 
   return (
     <div className="map-container">

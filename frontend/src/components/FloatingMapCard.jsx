@@ -18,7 +18,8 @@ import {
   Waves,
   Printer,
   HeartPulse,
-  Heart
+  Heart,
+  Home
 } from 'lucide-react';
 
 const CATEGORY_ICONS = {
@@ -34,7 +35,7 @@ const CATEGORY_ICONS = {
 
 export default function FloatingMapCard({
   place,
-  originName = '원광대병원',
+  originName = '대학로 1길 자취방',
   onClose,
   onOpenDetail,
   onSetAsDestination
@@ -42,16 +43,15 @@ export default function FloatingMapCard({
   if (!place) return null;
 
   const CategoryIcon = CATEGORY_ICONS[place.category_slug] || MapPin;
-
-  // 익산다로움 가맹점 여부 및 혜택 안내
   const isDaroum = place.is_daroum_accepted === 1;
-
-  // 카카오 지도 길찾기 URL
   const kakaoDirectionsUrl = `https://map.kakao.com/link/to/${encodeURIComponent(place.name)},${place.lat},${place.lng}`;
 
   return (
-    <div className="floating-map-card animate-slide-up">
-      {/* 카드 상단 헤더 */}
+    <div
+      className="floating-map-card animate-slide-up"
+      onClick={(e) => e.stopPropagation()}
+    >
+      {/* 1. 상단 바: 카테고리 뱃지 & 'X' 닫기 버튼 */}
       <div className="floating-card-header">
         <div className="floating-card-badge-row">
           <span className={`cat-pill cat-${place.category_slug}`}>
@@ -65,120 +65,125 @@ export default function FloatingMapCard({
             </span>
           )}
         </div>
+
+        {/* 필수 요구사항: 명확한 'X' 닫기 버튼 */}
         <button
           className="floating-close-btn"
-          onClick={onClose}
+          onClick={(e) => {
+            e.stopPropagation();
+            onClose();
+          }}
           aria-label="닫기"
-          title="미리보기 닫기"
+          title="오버레이 닫기"
         >
           <X size={16} />
         </button>
       </div>
 
-      {/* 장소 기본 정보 */}
-      <div className="floating-card-body">
-        <div className="floating-title-row">
-          <h3 className="floating-place-name">{place.name}</h3>
-          <div className="floating-score-badge">
-            <Star size={13} fill="#f59e0b" color="#f59e0b" />
-            <span>{(place.composite_score || 0).toFixed(1)}</span>
-          </div>
+      {/* 2. 장소 타이틀 & 평점 */}
+      <div className="floating-title-row">
+        <h3 className="floating-place-name">{place.name}</h3>
+        <div className="floating-score-badge">
+          <Star size={13} fill="#f59e0b" color="#f59e0b" />
+          <span>{(place.composite_score || 0).toFixed(1)}</span>
         </div>
-
-        <p className="floating-address">
-          <MapPin size={12} className="inline-icon" />
-          <span>{place.road_address}</span>
-        </p>
-
-        {/* 실시간 위치 기준 도보 거리 & 소요 시간 안내 */}
-        <div className="floating-distance-box">
-          <div className="dist-item">
-            <span className="dist-label">기준점 ({originName})</span>
-            <strong className="dist-val text-primary">
-              🚶 도보 약 {place.walkMinutes || 1}분 ({place.distanceKm || 0.1} km)
-            </strong>
-          </div>
-          {place.walkSteps && (
-            <div className="dist-steps">
-              <Footprints size={12} />
-              <span>약 {place.walkSteps.toLocaleString()}보</span>
-            </div>
-          )}
-        </div>
-
-        {/* 익산다로움 혜택 배너 (실시간 강조) */}
-        <div className={`daroum-banner ${isDaroum ? 'daroum-active' : 'daroum-inactive'}`}>
-          <CreditCard size={15} />
-          <div>
-            <strong>
-              {isDaroum ? '익산다로움 10% 캐시백 가맹점' : '익산다로움 결제 불가 매장'}
-            </strong>
-            <p>
-              {isDaroum
-                ? '익산시 지역화폐 다로움 카드로 결제 시 10% 실시간 환급 혜택'
-                : '대기업 직영 대형마트 연매출 기준 초과로 다로움 사용이 제한됩니다.'}
-            </p>
-          </div>
-        </div>
-
-        {/* 3대 축 지표 요약 바 */}
-        <div className="floating-metrics-grid">
-          <div className="f-metric">
-            <span className="f-metric-label">접근성</span>
-            <div className="f-metric-bar-bg">
-              <div
-                className="f-metric-bar-fill fill-access"
-                style={{ width: `${((place.access_score || 1) / 5) * 100}%` }}
-              />
-            </div>
-            <span className="f-metric-val">{(place.access_score || 1).toFixed(1)}</span>
-          </div>
-          <div className="f-metric">
-            <span className="f-metric-label">시간충분성</span>
-            <div className="f-metric-bar-bg">
-              <div
-                className="f-metric-bar-fill fill-time"
-                style={{ width: `${((place.time_score || 1) / 5) * 100}%` }}
-              />
-            </div>
-            <span className="f-metric-val">{(place.time_score || 1).toFixed(1)}</span>
-          </div>
-          <div className="f-metric">
-            <span className="f-metric-label">운영안정성</span>
-            <div className="f-metric-bar-bg">
-              <div
-                className="f-metric-bar-fill fill-stability"
-                style={{ width: `${((place.stability_score || 1) / 5) * 100}%` }}
-              />
-            </div>
-            <span className="f-metric-val">{(place.stability_score || 1).toFixed(1)}</span>
-          </div>
-        </div>
-
-        {/* 1인 가구 혜택 & 학생 생생 한줄 팁 */}
-        {place.best_quote && (
-          <div className="floating-quote-box">
-            <Quote size={13} className="quote-icon" />
-            <p className="floating-quote-text">{place.best_quote}</p>
-          </div>
-        )}
       </div>
 
-      {/* 카드 하단 액션 버튼 그룹 */}
-      <div className="floating-card-footer">
+      <p className="floating-address">
+        <MapPin size={12} className="inline-icon" />
+        <span>{place.road_address}</span>
+      </p>
+
+      {/* 3. 자취방 기준 실시간 도보 시간 및 거리 */}
+      <div className="floating-distance-box">
+        <div className="dist-origin-row">
+          <Home size={12} color="#0284c7" />
+          <span className="dist-label">출발지: {originName}</span>
+        </div>
+        <div className="dist-metrics-row">
+          <strong className="dist-walk-highlight">
+            🚶 도보 약 {place.walkMinutes || 1}분
+          </strong>
+          <span className="dist-meters-sub">
+            ({place.actualWalkMeters ? `${place.actualWalkMeters}m` : `${place.distanceKm || 0.1}km`})
+          </span>
+          {place.walkSteps && (
+            <span className="dist-steps-badge">
+              <Footprints size={11} /> 약 {place.walkSteps.toLocaleString()}보
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* 4. 익산다로움 10% 혜택 배너 */}
+      <div className={`daroum-banner ${isDaroum ? 'daroum-active' : 'daroum-inactive'}`}>
+        <CreditCard size={14} />
+        <span>
+          {isDaroum
+            ? '익산다로움 10% 캐시백 즉시 환급 가맹점'
+            : '대기업 직영 대형마트 (다로움 10% 제외 매장)'}
+        </span>
+      </div>
+
+      {/* 5. 3개 축 지표 미니 바 */}
+      <div className="floating-scores-compact">
+        <div className="compact-score-row">
+          <span className="score-name">접근성</span>
+          <div className="score-bar-mini">
+            <div
+              className="score-bar-mini-fill"
+              style={{ width: `${((place.access_score || 1) / 5) * 100}%`, background: 'var(--primary)' }}
+            />
+          </div>
+          <span className="score-val">{(place.access_score || 1).toFixed(1)}</span>
+        </div>
+
+        <div className="compact-score-row">
+          <span className="score-name">시간여유</span>
+          <div className="score-bar-mini">
+            <div
+              className="score-bar-mini-fill"
+              style={{ width: `${((place.time_score || 1) / 5) * 100}%`, background: '#6366f1' }}
+            />
+          </div>
+          <span className="score-val">{(place.time_score || 1).toFixed(1)}</span>
+        </div>
+
+        <div className="compact-score-row">
+          <span className="score-name">운영안정</span>
+          <div className="score-bar-mini">
+            <div
+              className="score-bar-mini-fill"
+              style={{ width: `${((place.stability_score || 1) / 5) * 100}%`, background: '#10b981' }}
+            />
+          </div>
+          <span className="score-val">{(place.stability_score || 1).toFixed(1)}</span>
+        </div>
+      </div>
+
+      {/* 6. 자취생 솔직 한줄평 */}
+      {place.best_quote && (
+        <div className="floating-quote-box">
+          <Quote size={12} className="quote-icon" />
+          <p className="floating-quote-text">"{place.best_quote}"</p>
+        </div>
+      )}
+
+      {/* 7. 액션 버튼: 길찾기 & 상세 후기 */}
+      <div className="floating-actions-row">
         <button
-          className="f-btn f-btn-primary"
+          className="btn-floating-action route"
           onClick={() => onSetAsDestination && onSetAsDestination(place)}
-          title="도착지로 설정하여 맞춤형 도보 경로 계산"
+          title="이곳을 목적지로 도보 경로 계산"
         >
-          <Navigation size={14} />
-          <span>도착지 설정 & 길찾기</span>
+          <Navigation size={13} />
+          <span>도착지 길찾기</span>
         </button>
 
         <button
-          className="f-btn f-btn-secondary"
+          className="btn-floating-action detail"
           onClick={() => onOpenDetail && onOpenDetail(place)}
-          title="학생 상세 리뷰 및 편의 스펙 모달 열기"
+          title="상세 후기 및 1인가구 스펙 모달 열기"
         >
           <span>상세 후기</span>
         </button>
@@ -187,10 +192,10 @@ export default function FloatingMapCard({
           href={kakaoDirectionsUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="f-btn f-btn-kakao"
+          className="btn-floating-action kakao"
           title="카카오맵 공식 길찾기로 열기"
         >
-          <ExternalLink size={14} />
+          <ExternalLink size={13} />
           <span>카카오맵</span>
         </a>
       </div>

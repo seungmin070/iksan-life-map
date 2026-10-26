@@ -92,6 +92,89 @@ export const INITIAL_TAGS = [
   { slug: 'delivery_available', display_name: '#자취배달_원룸촌직송', dimension: 'CONVENIENCE', polarity: 'POSITIVE', icon: 'Bike' }
 ];
 
+export const VIRTUAL_STUDIO_ROOMS = [
+  {
+    id: 'studio-daehakro',
+    name: '🏠 대학로 1길 원룸타운 (신동 로데오)',
+    shortName: '대학로 원룸타운',
+    zone: '신동 대학로',
+    lat: 35.9692,
+    lng: 126.9575,
+    address: '익산시 대학로1길 (신동 789번지대)',
+    desc: '원광대 학생식당 및 대학로 상권 초근접, 자취생 밀집 구역'
+  },
+  {
+    id: 'studio-sindong-center',
+    name: '🏠 신동 주민센터 뒤편 원룸촌 (익산대로 68길)',
+    shortName: '신동 주민센터 뒤',
+    zone: '신동 주민센터 부근',
+    lat: 35.9728,
+    lng: 126.9558,
+    address: '익산시 익산대로68길 (신동 행정복지센터 인근)',
+    desc: '원광대 북문 도보 3분, 조용한 주택가 신축 원룸 밀집 구역'
+  },
+  {
+    id: 'studio-northgate-rodeo',
+    name: '🏠 원광대 북문 로데오 원룸촌 (CU/북문 앞)',
+    shortName: '원대 북문 원룸촌',
+    zone: '북문 원룸타운',
+    lat: 35.9735,
+    lng: 126.9578,
+    address: '익산시 익산대로70길 (원광대 기숙사·북문 방면)',
+    desc: '의대/치대/약대/간호대생 및 자연계열 자취생 선호도 1위 구역'
+  },
+  {
+    id: 'studio-seodong-ro',
+    name: '🏠 서동로 인근 자취촌 (신동 현대·서동로4길)',
+    shortName: '서동로 자취지역',
+    zone: '신동 서동로',
+    lat: 35.9658,
+    lng: 126.9615,
+    address: '익산시 서동로4길 (신동 현대아파트 인근)',
+    desc: '대학로와 영등동 상권 중간 지점, 가성비 월세 자취 빌라 구역'
+  },
+  {
+    id: 'studio-main-gate',
+    name: '🏠 원광대 정문(남문) 맞은편 원룸가 (신동 130번지대)',
+    shortName: '정문(남문) 원룸가',
+    zone: '신동 정문',
+    lat: 35.9638,
+    lng: 126.9535,
+    address: '익산시 익산대로52길 (원광대 남문 앞)',
+    desc: '사범대·인문대·경상대 강의동 도보 5분 통학권'
+  },
+  {
+    id: 'studio-namjung-sports',
+    name: '🏠 남중동 국민생활관 뒤편 빌라촌',
+    shortName: '남중동 빌라촌',
+    zone: '남중동',
+    lat: 35.9585,
+    lng: 126.9515,
+    address: '익산시 선화로 391 (국민생활관 뒤)',
+    desc: '원광보건대 및 시청 방면 조용하고 주차가 편리한 원룸가'
+  },
+  {
+    id: 'studio-mohyeon-baesan',
+    name: '🏠 모현동 배산에코르·신시가지 원룸촌',
+    shortName: '모현동 배산원룸촌',
+    zone: '모현동',
+    lat: 35.9515,
+    lng: 126.9425,
+    address: '익산시 배산로 (모현동2가)',
+    desc: '모현 시립도서관 및 롯데시네마 상권 인근 쾌적한 오피스텔'
+  },
+  {
+    id: 'studio-yeongdeung',
+    name: '🏠 영등동 원룸·오피스텔 단지 (영등2동)',
+    shortName: '영등동 원룸단지',
+    zone: '영등동',
+    lat: 35.9592,
+    lng: 126.9685,
+    address: '익산시 하나로11길 (영등동 학원가 뒤)',
+    desc: '롯데마트 및 영등동 핵심 먹자골목 인접'
+  }
+];
+
 export function calculateDistanceMeters(lat1, lon1, lat2, lon2) {
   const R = 6371e3;
   const phi1 = (lat1 * Math.PI) / 180;
@@ -113,6 +196,8 @@ export function estimateWalkingInfo(straightMeters) {
   // 성인 보행 속도 4km/h (분당 약 67m)
   const walkMinutes = Math.max(1, Math.round(actualWalkMeters / 67));
   const walkSteps = Math.round(actualWalkMeters * 1.35);
+  // 예상 소모 칼로리 (분당 약 4.2 kcal)
+  const caloriesKcal = Math.round(walkMinutes * 4.2);
   // 택시 예상 요금: 기본 4,000원 + 거리비례요금 (130m당 100원)
   const taxiFare =
     actualWalkMeters <= 1500
@@ -123,6 +208,7 @@ export function estimateWalkingInfo(straightMeters) {
     actualWalkMeters,
     walkMinutes,
     walkSteps,
+    caloriesKcal,
     taxiFare
   };
 }
@@ -895,21 +981,30 @@ export function filterAndSortMockPlaces({
   soloOnly = false,
   openLateOnly = false,
   essentialOnly = false,
-  gateNodeId = 1,
+  gateNodeId = null,
+  originStudioId = 'studio-daehakro',
   customOrigin = null, // { lat, lng, name }
   searchQuery = '',
   sortBy = 'score',
-  campusNodes = INITIAL_CAMPUS_NODES
+  campusNodes = INITIAL_CAMPUS_NODES,
+  studioRooms = VIRTUAL_STUDIO_ROOMS
 }) {
-  let refLat = 35.9685;
-  let refLng = 126.9582;
-  let refName = '원광대병원';
+  let refLat = 35.9692;
+  let refLng = 126.9575;
+  let refName = '대학로 1길 원룸타운';
 
   if (customOrigin && customOrigin.lat && customOrigin.lng) {
     refLat = customOrigin.lat;
     refLng = customOrigin.lng;
     refName = customOrigin.name || '내 현재 위치';
-  } else {
+  } else if (originStudioId) {
+    const studio = studioRooms.find((s) => s.id === originStudioId);
+    if (studio) {
+      refLat = studio.lat;
+      refLng = studio.lng;
+      refName = studio.shortName;
+    }
+  } else if (gateNodeId) {
     const refNode = campusNodes.find((n) => n.id === Number(gateNodeId)) || campusNodes[0];
     if (refNode) {
       refLat = refNode.lat;
@@ -933,6 +1028,7 @@ export function filterAndSortMockPlaces({
       distanceKm,
       walkMinutes: walkingInfo.walkMinutes,
       walkSteps: walkingInfo.walkSteps,
+      caloriesKcal: walkingInfo.caloriesKcal,
       taxiFare: walkingInfo.taxiFare,
       access_score: accessScore,
       composite_score: compositeScore,
