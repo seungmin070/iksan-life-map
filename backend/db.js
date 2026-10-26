@@ -189,9 +189,9 @@ function initDatabase() {
   try { db.exec(`ALTER TABLE places ADD COLUMN delivery_info_text TEXT;`); } catch (e) {}
   try { db.exec(`ALTER TABLE places ADD COLUMN solo_spec_summary TEXT;`); } catch (e) {}
 
-  // 실제 카카오 GPS 좌표(35.9482) 일치 여부 확인 후 자동 재시딩
-  const checkCoordinate = db.prepare('SELECT lat FROM places WHERE id = ?').get('daiso-baesan');
-  if (!checkCoordinate || Math.abs(checkCoordinate.lat - 35.9482) > 0.0001) {
+  // 신규 식자재마트 및 생필품 점포 존재 여부 확인 후 자동 재시딩
+  const checkNewStore = db.prepare('SELECT id FROM places WHERE id = ?').get('food-sambo');
+  if (!checkNewStore) {
     seedDatabase(true);
   }
 }
@@ -200,7 +200,7 @@ function initDatabase() {
 // 2. 신규 데이터셋 시딩 (EXACT Kakao Maps Real-World Geolocation Coordinates)
 // ----------------------------------------------------------------------------
 function seedDatabase(forceClean = false) {
-  console.log('[DB] Seeding updated dataset with EXACT Kakao Maps GPS Coordinates & Solo Specs...');
+  console.log('[DB] Seeding updated dataset with EXACT Kakao Maps GPS Coordinates, Food Marts & Solo Specs...');
 
   if (forceClean) {
     db.exec(`
@@ -217,7 +217,7 @@ function seedDatabase(forceClean = false) {
     `);
   }
 
-  // 1. 캠퍼스 기준 거점 (원광대학교병원: EXACT Lat 35.9685, Lng 126.9582)
+  // 1. 캠퍼스 기준 거점 (7개 주요 지점)
   const insertNode = db.prepare(`
     INSERT INTO campus_reference_nodes (id, node_name, node_type, lat, lng, description)
     VALUES (?, ?, ?, ?, ?, ?)
@@ -226,8 +226,11 @@ function seedDatabase(forceClean = false) {
   insertNode.run(2, '원광대 북문 (원룸촌)', 'GATE', 35.9723, 126.9568, '학생 자취 원룸 밀집 구역');
   insertNode.run(3, '신동 대학로 로데오거리', 'HUB', 35.9686, 126.9588, '식당/주점/무인인쇄 상권 메인 스트리트');
   insertNode.run(4, '원광대 정문 (남문)', 'GATE', 35.9650, 126.9550, '정문 및 대운동장 방면');
+  insertNode.run(5, '모현동 원룸촌 (배산지구)', 'GATE', 35.9520, 126.9460, '모현동 신시가지 자취 원룸 밀집 구역');
+  insertNode.run(6, '영등동 상권 중심 (영등2동)', 'HUB', 35.9580, 126.9720, '롯데마트 및 영등동 핵심 상권');
+  insertNode.run(7, '익산역 KTX 광장', 'HUB', 35.9405, 126.9465, '익산역 서부광장 및 통학 셔틀 버스 승강장');
 
-  // 2. 카테고리 (6개 핵심 1인가구 편의시설 분류)
+  // 2. 카테고리 (8개 핵심 1인가구 편의시설 분류)
   const insertCat = db.prepare(`INSERT INTO place_categories (id, slug, name, icon_name) VALUES (?, ?, ?, ?)`);
   insertCat.run(1, 'daiso', '다이소 / 생활용품', 'Sparkles');
   insertCat.run(2, 'mart', '대형마트 / 식료품', 'ShoppingBag');
@@ -235,6 +238,8 @@ function seedDatabase(forceClean = false) {
   insertCat.run(4, 'laundry', '24시 코인빨래방', 'Waves');
   insertCat.run(5, 'print', '24시 무인 프린트·복사', 'Printer');
   insertCat.run(6, 'pharmacy', '심야·주말 당번약국', 'HeartPulse');
+  insertCat.run(7, 'food_mart', '식자재마트 / 대용량', 'Carrot');
+  insertCat.run(8, 'essentials', '올리브영 / 생활잡화', 'Heart');
 
   // 3. 태그 마스터 (사용자 요청 명칭 정확 매칭 포함)
   const insertTag = db.prepare(`
@@ -555,6 +560,188 @@ function seedDatabase(forceClean = false) {
       today_status: '영업 중 · 23:00 마감 (365일 심야 당번약국)',
       photo_url: 'https://images.unsplash.com/photo-1587854692152-cbe660dbde88?w=600&auto=format&fit=crop&q=80',
       scores: { access: 5.0, time: 5.0, stability: 5.0, avg: 5.00, dist: 0.1 }
+    },
+    {
+      id: 'hanaro-namjung',
+      category_id: 2,
+      name: '하나로마트 익산농협 남중점 (Hanaro Mart Namjung)',
+      road_address: '전북특별자치도 익산시 선화로 387 (남중동)',
+      dong: '남중동',
+      lat: 35.9558,
+      lng: 126.9532,
+      phone: '063-855-3301',
+      is_daroum_accepted: 1,
+      daroum_cashback_rate: 0.10,
+      has_solo_seats: 1,
+      is_single_order_allowed: 1,
+      takeout_available: 1,
+      single_portion_takeout: 1,
+      takeout_discount_text: '익산다로움 결제 시 10% 캐시백 즉시 환급',
+      delivery_available: 1,
+      min_delivery_amount: 30000,
+      delivery_fee: 3000,
+      delivery_info_text: '지역 당일배송 (3만원 이상 3,000원)',
+      solo_spec_summary: '로컬푸드 1인용 소포장 채소 1,000원 균일가 코너, 익산다로움 10% 적립',
+      business_hours_text: '매일 08:30 ~ 22:00 (연중무휴)',
+      today_status: '영업 중 · 22:00 마감 (다로움 10% 환급)',
+      photo_url: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=600&auto=format&fit=crop&q=80',
+      scores: { access: 4.0, time: 4.0, stability: 5.0, avg: 4.33, dist: 1.5 }
+    },
+    {
+      id: 'food-sambo',
+      category_id: 7,
+      name: '삼보식자재마트 신동점 (Sambo Food Mart)',
+      road_address: '전북특별자치도 익산시 익산대로 422 (신동)',
+      dong: '신동',
+      lat: 35.9648,
+      lng: 126.9525,
+      phone: '063-854-3388',
+      is_daroum_accepted: 1,
+      daroum_cashback_rate: 0.10,
+      has_solo_seats: 1,
+      is_single_order_allowed: 1,
+      takeout_available: 1,
+      single_portion_takeout: 1,
+      takeout_discount_text: '익산다로움 10% 환급 + 대용량 박스할인',
+      delivery_available: 1,
+      min_delivery_amount: 40000,
+      delivery_fee: 3000,
+      delivery_info_text: '자취방 대량구매 묶음배달 가능',
+      solo_spec_summary: '원룸 룸메이트와 쟁여두는 대용량 냉동식품, 즉석식품, 음료수 최저가',
+      business_hours_text: '매일 06:00 ~ 23:00 (연중무휴 아침일찍 오픈)',
+      today_status: '영업 중 · 23:00 마감 (아침 6시 오픈)',
+      photo_url: 'https://images.unsplash.com/photo-1578916171728-46686eac8d58?w=600&auto=format&fit=crop&q=80',
+      scores: { access: 5.0, time: 5.0, stability: 5.0, avg: 5.00, dist: 0.7 }
+    },
+    {
+      id: 'food-mohyeon',
+      category_id: 7,
+      name: '모현농민식자재마트 (Mohyeon Food Mart)',
+      road_address: '전북특별자치도 익산시 선화로 95 (모현동2가)',
+      dong: '모현동',
+      lat: 35.9452,
+      lng: 126.9365,
+      phone: '063-858-9900',
+      is_daroum_accepted: 1,
+      daroum_cashback_rate: 0.10,
+      has_solo_seats: 1,
+      is_single_order_allowed: 1,
+      takeout_available: 1,
+      single_portion_takeout: 1,
+      takeout_discount_text: '익산다로움 결제 10% 캐시백 적용',
+      delivery_available: 1,
+      min_delivery_amount: 50000,
+      delivery_fee: 3000,
+      delivery_info_text: '모현동 일대 트럭 배송',
+      solo_spec_summary: '신선 정육·수산·계란 1판 초특가, 자취생 대용량 장보기 최적',
+      business_hours_text: '매일 07:00 ~ 22:30 (연중무휴)',
+      today_status: '영업 중 · 22:30 마감 (다로움 10% 환급)',
+      photo_url: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=600&auto=format&fit=crop&q=80',
+      scores: { access: 2.0, time: 4.0, stability: 5.0, avg: 3.67, dist: 2.7 }
+    },
+    {
+      id: 'food-woori',
+      category_id: 7,
+      name: '우리식자재마트 영등점 (Woori 24H Food Mart)',
+      road_address: '전북특별자치도 익산시 고봉로 319 (영등동)',
+      dong: '영등동',
+      lat: 35.9625,
+      lng: 126.9755,
+      phone: '063-831-7788',
+      is_daroum_accepted: 1,
+      daroum_cashback_rate: 0.10,
+      has_solo_seats: 1,
+      is_single_order_allowed: 1,
+      takeout_available: 1,
+      single_portion_takeout: 1,
+      takeout_discount_text: '익산다로움 10% 환급',
+      delivery_available: 1,
+      min_delivery_amount: 30000,
+      delivery_fee: 3000,
+      delivery_info_text: '영등동 상권 묶음 직배송',
+      solo_spec_summary: '24시간 심야 운영 대형 식자재 마트, 밤늦게 급한 식재료 및 간식 구매',
+      business_hours_text: '24시간 연중무휴',
+      today_status: '영업 중 · 24시간 연중무휴 (심야 장보기)',
+      photo_url: 'https://images.unsplash.com/photo-1534723452862-4c874018d66d?w=600&auto=format&fit=crop&q=80',
+      scores: { access: 3.0, time: 5.0, stability: 5.0, avg: 4.33, dist: 2.1 }
+    },
+    {
+      id: 'oliveyoung-wonkwang',
+      category_id: 8,
+      name: '올리브영 원광대점 (Olive Young Wonkwang Univ.)',
+      road_address: '전북특별자치도 익산시 익산대로54길 38 (신동 대학로)',
+      dong: '신동',
+      lat: 35.9689,
+      lng: 126.9585,
+      phone: '063-843-5290',
+      is_daroum_accepted: 1,
+      daroum_cashback_rate: 0.10,
+      has_solo_seats: 1,
+      is_single_order_allowed: 1,
+      takeout_available: 1,
+      single_portion_takeout: 1,
+      takeout_discount_text: '올영세일 + 익산다로움 결제 시 10% 추가 환급',
+      delivery_available: 1,
+      min_delivery_amount: 20000,
+      delivery_fee: 2500,
+      delivery_info_text: '오늘드림 3시간 즉시배송 (3만원 이상 무료)',
+      solo_spec_summary: '스킨케어, 샴푸·바디워시, 면도기, 비타민 영양제, 올리브영 오늘드림 3시간 즉시배달',
+      business_hours_text: '매일 10:00 ~ 22:30 (연중무휴)',
+      today_status: '영업 중 · 22:30 마감 (오늘드림 즉시배송)',
+      photo_url: 'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=600&auto=format&fit=crop&q=80',
+      scores: { access: 5.0, time: 4.0, stability: 5.0, avg: 4.67, dist: 0.1 }
+    },
+    {
+      id: 'oliveyoung-yeongdeung',
+      category_id: 8,
+      name: '올리브영 익산영등점 (Olive Young Yeongdeung)',
+      road_address: '전북특별자치도 익산시 무왕로 1062 (영등동)',
+      dong: '영등동',
+      lat: 35.9572,
+      lng: 126.9712,
+      phone: '063-832-5290',
+      is_daroum_accepted: 1,
+      daroum_cashback_rate: 0.10,
+      has_solo_seats: 1,
+      is_single_order_allowed: 1,
+      takeout_available: 1,
+      single_portion_takeout: 1,
+      takeout_discount_text: '익산다로움 10% 캐시백 적용',
+      delivery_available: 1,
+      min_delivery_amount: 20000,
+      delivery_fee: 2500,
+      delivery_info_text: '올리브영 오늘드림 지원',
+      solo_spec_summary: '영등동 최대 규모 뷰티·헬스·위생용품 라인업 구비',
+      business_hours_text: '매일 10:00 ~ 22:30 (연중무휴)',
+      today_status: '영업 중 · 22:30 마감 (영등동 중심)',
+      photo_url: 'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=600&auto=format&fit=crop&q=80',
+      scores: { access: 4.0, time: 4.0, stability: 5.0, avg: 4.33, dist: 1.7 }
+    },
+    {
+      id: 'alpha-stationery',
+      category_id: 8,
+      name: '알파문구 익산신동점 (Alpha Stationery)',
+      road_address: '전북특별자치도 익산시 익산대로 452 (신동)',
+      dong: '신동',
+      lat: 35.9702,
+      lng: 126.9571,
+      phone: '063-851-0982',
+      is_daroum_accepted: 1,
+      daroum_cashback_rate: 0.10,
+      has_solo_seats: 1,
+      is_single_order_allowed: 1,
+      takeout_available: 1,
+      single_portion_takeout: 1,
+      takeout_discount_text: '익산다로움 10% 환급 + 현금 영수증',
+      delivery_available: 0,
+      min_delivery_amount: 0,
+      delivery_fee: 0,
+      delivery_info_text: '매장 직접 방문 구매',
+      solo_spec_summary: '강의 노트, 필기도구, A4 용지 낱권, 테이프, 건전지, 생활공구 낱개 판매',
+      business_hours_text: '평일 09:00 ~ 20:30, 토 10:00 ~ 18:00 (일요일 휴무)',
+      today_status: '영업 중 · 20:30 마감 (일요일 휴무)',
+      photo_url: 'https://images.unsplash.com/photo-1583485088034-697b5bc54ccd?w=600&auto=format&fit=crop&q=80',
+      scores: { access: 5.0, time: 3.0, stability: 4.0, avg: 4.00, dist: 0.2 }
     }
   ];
 

@@ -1,7 +1,8 @@
 import React from 'react';
 import { 
   Star, Clock, CreditCard, MapPin, MessageSquare, AlertTriangle, 
-  ShieldCheck, Sparkles, PackageCheck, Bike, Waves, Printer, HeartPulse, ShoppingBag, Store
+  ShieldCheck, Sparkles, PackageCheck, Bike, Waves, Printer, HeartPulse, ShoppingBag, Store,
+  Carrot, Heart, Navigation
 } from 'lucide-react';
 
 export default function PlaceCard({
@@ -9,7 +10,8 @@ export default function PlaceCard({
   isSelected,
   onSelect,
   onOpenDetail,
-  onOpenReviewForm
+  onOpenReviewForm,
+  onSetAsDestination
 }) {
   const {
     id,
@@ -56,8 +58,12 @@ export default function PlaceCard({
     switch (slug) {
       case 'daiso':
         return { color: '#ec4899', bg: 'rgba(236, 72, 153, 0.1)', border: 'rgba(236, 72, 153, 0.3)', icon: <Sparkles size={12} /> };
+      case 'food_mart':
+        return { color: '#16a34a', bg: 'rgba(22, 163, 74, 0.1)', border: 'rgba(22, 163, 74, 0.3)', icon: <Carrot size={12} /> };
       case 'mart':
         return { color: '#0284c7', bg: 'rgba(2, 132, 199, 0.1)', border: 'rgba(2, 132, 199, 0.3)', icon: <ShoppingBag size={12} /> };
+      case 'essentials':
+        return { color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.1)', border: 'rgba(139, 92, 246, 0.3)', icon: <Heart size={12} /> };
       case 'market':
         return { color: '#ea580c', bg: 'rgba(234, 88, 12, 0.1)', border: 'rgba(234, 88, 12, 0.3)', icon: <Store size={12} /> };
       case 'laundry':
@@ -284,13 +290,23 @@ export default function PlaceCard({
           onClick={() => onOpenDetail(place)}
         >
           <MessageSquare size={12} />
-          상세 & 리뷰 ({total_reviews})
+          상세 ({total_reviews})
         </button>
+        {onSetAsDestination && (
+          <button
+            className="btn-small btn-route"
+            onClick={() => onSetAsDestination(place)}
+            title="이곳을 목적지로 도보 경로 및 소요시간 계산"
+          >
+            <Navigation size={12} />
+            길찾기
+          </button>
+        )}
         <button
           className="btn-small btn-primary"
           onClick={() => onOpenReviewForm(place)}
         >
-          ✍️ 리뷰 작성
+          ✍️ 리뷰
         </button>
       </div>
     </div>

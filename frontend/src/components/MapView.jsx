@@ -6,6 +6,7 @@ export default function MapView({
   campusNodes = [],
   selectedGateId,
   selectedPlace,
+  userGpsLocation,
   onSelectPlace
 }) {
   const mapRef = useRef(null);
@@ -40,9 +41,33 @@ export default function MapView({
     markersRef.current.forEach((marker) => marker.remove());
     markersRef.current = [];
 
-    // A. 기준 거점 (원광대병원 등) 마커 오버레이
+    // A-1. GPS 사용자 현재 위치 마커 (있을 경우)
+    if (userGpsLocation) {
+      const gpsIcon = L.divIcon({
+        className: 'campus-gate-marker-wrapper',
+        html: `
+          <div class="campus-gate-pin selected" style="background:#0284c7;border-color:#38bdf8;">
+            <div class="status-ring" style="border-color:rgba(56,189,248,0.7);animation:pulse-ring 1.5s infinite;"></div>
+            <div class="pin-inner">
+              <span>📍</span>
+              <span class="pin-title">내 현재 위치</span>
+            </div>
+          </div>
+        `,
+        iconSize: [130, 36],
+        iconAnchor: [65, 18]
+      });
+
+      const gpsMarker = L.marker([userGpsLocation.lat, userGpsLocation.lng], { icon: gpsIcon })
+        .addTo(map)
+        .bindPopup('<b>📍 내 현재 위치 (GPS)</b><br>실시간 감지된 사용자 출발 지점');
+
+      markersRef.current.push(gpsMarker);
+    }
+
+    // A-2. 기준 거점 (원광대병원 등) 마커 오버레이
     campusNodes.forEach((node) => {
-      const isSelectedGate = node.id === selectedGateId;
+      const isSelectedGate = node.id === selectedGateId && !userGpsLocation;
       const isHosp = node.node_type === 'HOSPITAL';
 
       const gateIcon = L.divIcon({
@@ -72,8 +97,12 @@ export default function MapView({
       switch (slug) {
         case 'daiso':
           return { bg: '#ec4899', ring: 'rgba(236, 72, 153, 0.45)', emoji: '✨' };
+        case 'food_mart':
+          return { bg: '#16a34a', ring: 'rgba(22, 163, 74, 0.45)', emoji: '🥦' };
         case 'mart':
           return { bg: '#0284c7', ring: 'rgba(2, 132, 199, 0.45)', emoji: '🛒' };
+        case 'essentials':
+          return { bg: '#8b5cf6', ring: 'rgba(139, 92, 246, 0.45)', emoji: '💄' };
         case 'market':
           return { bg: '#ea580c', ring: 'rgba(234, 88, 12, 0.45)', emoji: '🏪' };
         case 'laundry':
@@ -129,7 +158,7 @@ export default function MapView({
         easeLinearity: 0.25
       });
     }
-  }, [places, campusNodes, selectedGateId, selectedPlace]);
+  }, [places, campusNodes, selectedGateId, selectedPlace, userGpsLocation]);
 
   return (
     <div className="map-container">

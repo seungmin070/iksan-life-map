@@ -289,7 +289,7 @@ input, select, textarea {
   position: relative;
 }
 
-/* Sidebar List */
+/* Sidebar List (Collapsible for Wide Map View) */
 .sidebar {
   width: 490px;
   min-width: 410px;
@@ -301,6 +301,20 @@ input, select, textarea {
   height: 100%;
   z-index: 500;
   box-shadow: var(--shadow-sm);
+  transition: width 0.28s cubic-bezier(0.4, 0, 0.2, 1), min-width 0.28s cubic-bezier(0.4, 0, 0.2, 1), max-width 0.28s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease, transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: width, transform;
+}
+
+.sidebar.collapsed {
+  width: 0 !important;
+  min-width: 0 !important;
+  max-width: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border-right: none !important;
+  overflow: hidden !important;
+  opacity: 0;
+  pointer-events: none;
 }
 
 /* Filter Bar Section */
@@ -1893,3 +1907,630 @@ html.dark .landing-preview-card.card-focused {
     max-width: 360px;
   }
 }
+
+/* ==========================================================
+   Map View Wrapper & Interactive Floating Elements
+   ========================================================== */
+.map-view-wrapper {
+  flex: 1;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg-surface);
+}
+
+/* Header Buttons: Sidebar toggle, GPS locate, Route Planner */
+.nav-sidebar-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 20px;
+  background: var(--bg-chip);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.nav-sidebar-toggle-btn:hover {
+  background: var(--primary-light);
+  border-color: var(--primary-border);
+  color: var(--primary);
+  transform: translateY(-1px);
+}
+
+.nav-gps-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 20px;
+  background: var(--bg-chip);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.nav-gps-btn:hover {
+  border-color: #0284c7;
+  color: #0284c7;
+  background: rgba(2, 132, 199, 0.08);
+}
+.nav-gps-btn.active {
+  background: #0284c7;
+  color: #ffffff;
+  border-color: #0284c7;
+  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.4);
+}
+
+.nav-planner-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 20px;
+  background: var(--bg-chip);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.nav-planner-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+.nav-planner-btn.active {
+  background: linear-gradient(135deg, var(--primary), #0284c7);
+  color: #ffffff;
+  border-color: transparent;
+  box-shadow: 0 2px 8px rgba(13, 148, 136, 0.35);
+}
+
+.btn-route {
+  background: rgba(13, 148, 136, 0.1);
+  color: var(--primary);
+  border: 1px solid var(--primary-border);
+}
+.btn-route:hover {
+  background: var(--primary);
+  color: #ffffff;
+}
+
+/* Category Pills & Tags: Food Mart & Essentials */
+.cat-pill.cat-food_mart, .category-tab[data-slug="food_mart"] {
+  background: rgba(22, 163, 74, 0.1);
+  color: #16a34a;
+  border-color: rgba(22, 163, 74, 0.3);
+}
+html.dark .cat-pill.cat-food_mart {
+  background: rgba(34, 197, 94, 0.2);
+  color: #4ade80;
+  border-color: rgba(34, 197, 94, 0.4);
+}
+
+.cat-pill.cat-essentials, .category-tab[data-slug="essentials"] {
+  background: rgba(139, 92, 246, 0.1);
+  color: #8b5cf6;
+  border-color: rgba(139, 92, 246, 0.3);
+}
+html.dark .cat-pill.cat-essentials {
+  background: rgba(168, 85, 247, 0.2);
+  color: #c084fc;
+  border-color: rgba(168, 85, 247, 0.4);
+}
+
+/* ==========================================================
+   Floating Map Info Card (Overlay on Marker Click)
+   ========================================================== */
+.floating-map-card {
+  position: absolute;
+  bottom: 24px;
+  left: 24px;
+  width: 430px;
+  max-width: calc(100% - 48px);
+  max-height: calc(100% - 48px);
+  overflow-y: auto;
+  z-index: 1000;
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border-card);
+  border-radius: 18px;
+  padding: 1.15rem;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.25), 0 0 1px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.floating-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.floating-card-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.floating-close-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--bg-chip);
+  border: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  transition: all 0.2s;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.floating-close-btn:hover {
+  background: #fee2e2;
+  color: #dc2626;
+  border-color: #fca5a5;
+}
+
+.floating-card-title-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.floating-place-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.floating-total-score {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #eab308;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background: rgba(234, 179, 8, 0.12);
+  padding: 0.2rem 0.55rem;
+  border-radius: 8px;
+  border: 1px solid rgba(234, 179, 8, 0.3);
+  white-space: nowrap;
+}
+
+.floating-place-address {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.floating-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  background: var(--bg-chip);
+  padding: 0.65rem;
+  border-radius: 12px;
+  border: 1px solid var(--border-subtle);
+}
+
+.floating-metric-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.floating-metric-label {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.floating-metric-val {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.floating-daroum-alert {
+  padding: 0.55rem 0.75rem;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+.floating-daroum-alert.accepted {
+  background: var(--daroum-bg);
+  border: 1px solid var(--daroum-border);
+  color: var(--daroum);
+}
+.floating-daroum-alert.not-accepted {
+  background: var(--bg-chip);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+}
+
+.floating-scores-compact {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 0.6rem 0.75rem;
+}
+
+.compact-score-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.74rem;
+}
+
+.score-name {
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.score-bar-mini {
+  flex: 1;
+  height: 6px;
+  background: var(--bg-chip);
+  border-radius: 3px;
+  margin: 0 0.6rem;
+  overflow: hidden;
+}
+
+.score-bar-mini-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.floating-quote-box {
+  background: var(--bg-chip);
+  border-left: 3px solid var(--primary);
+  padding: 0.45rem 0.65rem;
+  border-radius: 0 8px 8px 0;
+  font-size: 0.76rem;
+  color: var(--text-secondary);
+  font-style: italic;
+  line-height: 1.4;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+}
+
+.floating-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 0.25rem;
+}
+
+.btn-floating-action {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  border-radius: 10px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  cursor: pointer;
+}
+.btn-floating-action.route {
+  background: linear-gradient(135deg, var(--primary), #0284c7);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(13, 148, 136, 0.3);
+}
+.btn-floating-action.route:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+.btn-floating-action.detail {
+  background: var(--bg-chip);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+}
+.btn-floating-action.detail:hover {
+  background: var(--primary-light);
+  border-color: var(--primary-border);
+  color: var(--primary);
+}
+.btn-floating-action.kakao {
+  background: #fee500;
+  color: #191919;
+  font-weight: 800;
+}
+.btn-floating-action.kakao:hover {
+  background: #fdd835;
+}
+
+/* ==========================================================
+   Naver Maps Style Route Planner Widget
+   ========================================================== */
+.route-planner-widget {
+  position: absolute;
+  top: 16px;
+  left: 20px;
+  width: 440px;
+  max-width: calc(100% - 40px);
+  z-index: 1000;
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border-card);
+  border-radius: 16px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.planner-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-subtle);
+  user-select: none;
+}
+
+.planner-header-title {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-weight: 800;
+  font-size: 0.88rem;
+  color: var(--text-primary);
+}
+
+.planner-nav-icon {
+  color: var(--primary);
+}
+
+.naver-style-badge {
+  background: #03c75a;
+  color: #ffffff;
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+  letter-spacing: -0.01em;
+}
+
+.planner-toggle-btn, .planner-close-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-chip);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.planner-toggle-btn:hover, .planner-close-btn:hover {
+  background: var(--border-subtle);
+  color: var(--text-primary);
+}
+
+.planner-body {
+  padding: 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.planner-inputs-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.planner-input-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 0.35rem 0.65rem;
+}
+
+.route-point-marker {
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+.route-point-marker.origin-marker {
+  background: #0284c7;
+  color: #ffffff;
+}
+.route-point-marker.dest-marker {
+  background: #e11d48;
+  color: #ffffff;
+}
+
+.planner-select {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  outline: none;
+  cursor: pointer;
+}
+
+.btn-gps-locate {
+  padding: 4px;
+  border-radius: 6px;
+  background: var(--bg-chip);
+  color: var(--primary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-gps-locate:hover {
+  background: var(--primary-light);
+}
+
+.btn-swap-points {
+  align-self: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--bg-chip);
+  border: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+  margin: -0.25rem 0;
+  z-index: 2;
+}
+.btn-swap-points:hover {
+  transform: rotate(180deg);
+  background: var(--primary-light);
+  color: var(--primary);
+  border-color: var(--primary-border);
+}
+
+.planner-result-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.result-main-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.result-stat-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.result-stat-label {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.result-time-val {
+  font-size: 1.45rem;
+  font-weight: 900;
+  color: var(--primary);
+  letter-spacing: -0.02em;
+}
+
+.result-time-val .unit {
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.result-dist-val {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.result-chips-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.result-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.28rem 0.55rem;
+  border-radius: 8px;
+  background: var(--bg-chip);
+  font-size: 0.73rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.result-footer-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding-top: 0.45rem;
+  border-top: 1px dashed var(--border-subtle);
+}
+
+.result-hint-text {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  line-height: 1.3;
+}
+
+.btn-open-kakaomap {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 8px;
+  background: #fee500;
+  color: #191919;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+.btn-open-kakaomap:hover {
+  background: #fdd835;
+  transform: translateY(-1px);
+}
+

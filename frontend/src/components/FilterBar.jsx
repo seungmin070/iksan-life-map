@@ -1,7 +1,7 @@
 import React from 'react';
 import { 
   Search, Sparkles, ShoppingBag, Store, Waves, Printer, HeartPulse, 
-  Layers, Info, PackageCheck, CreditCard, Clock
+  Layers, Info, PackageCheck, CreditCard, Clock, Carrot, Heart
 } from 'lucide-react';
 
 export default function FilterBar({
@@ -27,8 +27,12 @@ export default function FilterBar({
     switch (slug) {
       case 'daiso':
         return <Sparkles size={14} />;
+      case 'food_mart':
+        return <Carrot size={14} />;
       case 'mart':
         return <ShoppingBag size={14} />;
+      case 'essentials':
+        return <Heart size={14} />;
       case 'market':
         return <Store size={14} />;
       case 'laundry':
@@ -50,7 +54,7 @@ export default function FilterBar({
         <input
           type="text"
           className="search-input"
-          placeholder="다이소, 롯데마트, 이마트, 빨래방, 프린트, 심야약국 검색..."
+          placeholder="식자재마트, 올리브영, 다이소, 롯데마트, 빨래방, 심야약국 검색..."
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
         />
@@ -150,10 +154,10 @@ export default function FilterBar({
             onChange={(e) => onSortChange(e.target.value)}
             className="sort-select"
           >
-            <option value="score">종합 평균 점수순</option>
-            <option value="distance">원대병원 거리순</option>
+            <option value="distance">가까운 거리순 🚶 (실시간)</option>
+            <option value="score">종합 평가 점수순 ★</option>
             <option value="access">접근성 점수순</option>
-            <option value="time">시간 충분성순</option>
+            <option value="time">심야·영업시간순</option>
             <option value="stability">운영 안정성순</option>
           </select>
         </div>

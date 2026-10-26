@@ -7,6 +7,7 @@ export default function KakaoMapView({
   campusNodes,
   selectedGateId,
   selectedPlace,
+  userGpsLocation,
   onSelectPlace,
   onSelectKakaoPlace,
   searchQuery,
@@ -105,9 +106,38 @@ export default function KakaoMapView({
     });
     overlaysRef.current = [];
 
-    // A. 원광대 주요 거점 마커 오버레이
+    // A-1. 사용자 GPS 현재 위치 오버레이
+    if (userGpsLocation) {
+      const gpsPos = new window.kakao.maps.LatLng(userGpsLocation.lat, userGpsLocation.lng);
+      const gpsEl = document.createElement('div');
+      gpsEl.style.cssText = `
+        background: #0284c7;
+        color: #ffffff;
+        font-size: 11px;
+        font-weight: 800;
+        padding: 5px 12px;
+        border-radius: 20px;
+        border: 2px solid #38bdf8;
+        box-shadow: 0 0 16px rgba(56, 189, 248, 0.8), 0 3px 8px rgba(0,0,0,0.35);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        white-space: nowrap;
+      `;
+      gpsEl.innerHTML = `<span>📍 내 현재 위치</span>`;
+      const gpsOverlay = new window.kakao.maps.CustomOverlay({
+        position: gpsPos,
+        content: gpsEl,
+        yAnchor: 1.3
+      });
+      gpsOverlay.setMap(map);
+      overlaysRef.current.push(gpsOverlay);
+    }
+
+    // A-2. 원광대 주요 거점 마커 오버레이
     campusNodes.forEach((node) => {
-      const isSelectedGate = node.id === selectedGateId;
+      const isSelectedGate = node.id === selectedGateId && !userGpsLocation;
       const position = new window.kakao.maps.LatLng(node.lat, node.lng);
 
       const content = document.createElement('div');
@@ -146,7 +176,9 @@ export default function KakaoMapView({
       let bgColor = '#0d9488';
       let emoji = '📍';
       if (place.category_slug === 'daiso') { bgColor = '#ec4899'; emoji = '✨'; }
+      else if (place.category_slug === 'food_mart') { bgColor = '#16a34a'; emoji = '🥦'; }
       else if (place.category_slug === 'mart') { bgColor = '#0284c7'; emoji = '🛒'; }
+      else if (place.category_slug === 'essentials') { bgColor = '#8b5cf6'; emoji = '💄'; }
       else if (place.category_slug === 'market') { bgColor = '#ea580c'; emoji = '🏪'; }
       else if (place.category_slug === 'laundry') { bgColor = '#6366f1'; emoji = '🧺'; }
       else if (place.category_slug === 'print') { bgColor = '#2563eb'; emoji = '🖨️'; }
@@ -201,7 +233,7 @@ export default function KakaoMapView({
       const moveLatLon = new window.kakao.maps.LatLng(selectedPlace.lat, selectedPlace.lng);
       map.panTo(moveLatLon);
     }
-  }, [isSdkLoaded, places, campusNodes, selectedGateId, selectedPlace]);
+  }, [isSdkLoaded, places, campusNodes, selectedGateId, selectedPlace, userGpsLocation]);
 
   // 4. 카카오 실시간 로컬 키워드 검색 (실제 익산 상권 POI 검색)
   useEffect(() => {

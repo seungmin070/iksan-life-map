@@ -8,6 +8,8 @@ import PlaceDetailModal from './components/PlaceDetailModal';
 import ReviewFormModal from './components/ReviewFormModal';
 import ApiKeyModal from './components/ApiKeyModal';
 import LandingScreen from './components/LandingScreen';
+import FloatingMapCard from './components/FloatingMapCard';
+import RoutePlannerWidget from './components/RoutePlannerWidget';
 import {
   INITIAL_CAMPUS_NODES,
   INITIAL_CATEGORIES,
@@ -80,6 +82,39 @@ export default function App() {
   const [places, setPlaces] = useState(initialPlacesList);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedPlace, setSelectedPlace] = useState(initialPlacesList[0] || null);
+
+  // 사이드바 목록 접기/펼치기 (지도 100% 와이드 뷰 토글)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
+  // 실시간 도보 길찾기 계산기 모달/위젯 상태
+  const [isRoutePlannerOpen, setIsRoutePlannerOpen] = useState(false);
+
+  // GPS 사용자 현재 위치
+  const [userGpsLocation, setUserGpsLocation] = useState(null);
+
+  // 길찾기 대상 목적지 점포
+  const [destinationPlace, setDestinationPlace] = useState(null);
+
+  // GPS 실시간 내 위치 감지 핸들러
+  const handleRequestGps = useCallback(() => {
+    if (!navigator.geolocation) {
+      alert('사용하시는 브라우저가 위치 정보(GPS) 서비스를 지원하지 않습니다.');
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        const coords = { lat: latitude, lng: longitude, name: '내 현재 위치' };
+        setUserGpsLocation(coords);
+      },
+      (err) => {
+        console.warn('Geolocation access failed:', err);
+        alert('현재 GPS 위치 정보를 가져오지 못했습니다. 브라우저 위치 권한을 확인해주세요.');
+      },
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 30000 }
+    );
+  }, []);
 
   // 모달 상태
   const [detailModalPlace, setDetailModalPlace] = useState(null);
@@ -157,7 +192,8 @@ export default function App() {
         gateNodeId: selectedGateId,
         searchQuery,
         sortBy,
-        campusNodes
+        campusNodes,
+        customOrigin: userGpsLocation
       });
 
       setPlaces(mockResult);
@@ -169,7 +205,7 @@ export default function App() {
     }
 
     setIsLoading(false);
-  }, [selectedCategory, daroumOnly, soloOnly, openLateOnly, essentialOnly, selectedGateId, searchQuery, sortBy, selectedPlace, campusNodes]);
+  }, [selectedCategory, daroumOnly, soloOnly, openLateOnly, essentialOnly, selectedGateId, searchQuery, sortBy, selectedPlace, campusNodes, userGpsLocation]);
 
   useEffect(() => {
     fetchPlaces();
@@ -271,7 +307,16 @@ export default function App() {
       <Navbar
         campusNodes={campusNodes}
         selectedGateId={selectedGateId}
-        onSelectGate={(id) => setSelectedGateId(id)}
+        onSelectGate={(id) => {
+          setUserGpsLocation(null);
+          setSelectedGateId(id);
+        }}
+        userGpsLocation={userGpsLocation}
+        onRequestGps={handleRequestGps}
+        isSidebarOpen={isSidebarOpen}
+        onToggleSidebar={() => setIsSidebarOpen((prev) => !prev)}
+        isRoutePlannerOpen={isRoutePlannerOpen}
+        onToggleRoutePlanner={() => setIsRoutePlannerOpen((prev) => !prev)}
         hasKakaoKey={!!kakaoKey}
         onOpenApiKeyModal={() => setIsApiKeyModalOpen(true)}
         isDarkMode={isDarkMode}
@@ -289,7 +334,7 @@ export default function App() {
 
       {/* 메인 뷰: 좌측 장소 리스트 + 우측 인터랙티브 지도 */}
       <main className="main-content">
-        <aside className="sidebar">
+        <aside className={`sidebar ${!isSidebarOpen ? 'collapsed' : ''}`}>
           {/* 필터 & 검색 바 */}
           <FilterBar
             categories={categories}
@@ -314,7 +359,7 @@ export default function App() {
           <div className="places-list">
             {isLoading ? (
               <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-muted)' }}>
-                <p>원광대 주변 맞춤 편의 정보를 불러오는 중...</p>
+                <p>원광대 & 익산 1인가구 맞춤 편의 정보를 불러오는 중...</p>
               </div>
             ) : places.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-muted)' }}>
@@ -343,53 +388,98 @@ export default function App() {
                   onSelect={(p) => setSelectedPlace(p)}
                   onOpenDetail={handleOpenDetail}
                   onOpenReviewForm={(p) => setReviewModalPlace(p)}
+                  onSetAsDestination={(p) => {
+                    setDestinationPlace(p);
+                    setIsRoutePlannerOpen(true);
+                  }}
                 />
               ))
             )}
           </div>
         </aside>
 
-        {/* 인터랙티브 지도 영역 (카카오 키가 있으면 카카오 지도, 없으면 내장 Leaflet 지도) */}
-        {kakaoKey ? (
-          <KakaoMapView
-            kakaoKey={kakaoKey}
-            places={places}
-            campusNodes={campusNodes}
-            selectedGateId={selectedGateId}
-            selectedPlace={selectedPlace}
-            onSelectPlace={(place) => setSelectedPlace(place)}
-            onSelectKakaoPlace={handleSelectKakaoPlace}
-            searchQuery={searchQuery}
-            onOpenApiKeyModal={() => setIsApiKeyModalOpen(true)}
-          />
-        ) : (
-          <div style={{ flex: 1, position: 'relative', display: 'flex', flexDirection: 'column' }}>
-            <MapView
+        {/* 인터랙티브 지도 영역 래퍼 */}
+        <div className="map-view-wrapper">
+          {/* 맞춤형 도보 길찾기 계산기 (네이버 지도 스타일) */}
+          {isRoutePlannerOpen && (
+            <RoutePlannerWidget
+              campusNodes={campusNodes}
+              places={places}
+              selectedOriginNodeId={userGpsLocation ? 'gps' : selectedGateId}
+              onSelectOriginNode={(val) => {
+                if (val === 'gps') {
+                  handleRequestGps();
+                } else {
+                  setUserGpsLocation(null);
+                  setSelectedGateId(Number(val));
+                }
+              }}
+              userGpsLocation={userGpsLocation}
+              onRequestGps={handleRequestGps}
+              selectedDestinationPlace={destinationPlace || selectedPlace}
+              onSelectDestinationPlace={(p) => setDestinationPlace(p)}
+              onClose={() => setIsRoutePlannerOpen(false)}
+            />
+          )}
+
+          {/* 마커 클릭 시 지도 위에 즉각 표시되는 플로팅 인포 카드 */}
+          {selectedPlace && (
+            <FloatingMapCard
+              place={selectedPlace}
+              originName={userGpsLocation ? '내 현재 위치' : (campusNodes.find((n) => n.id === selectedGateId)?.node_name?.split(' ')[0] || '원광대병원')}
+              onClose={() => setSelectedPlace(null)}
+              onOpenDetail={handleOpenDetail}
+              onSetAsDestination={(p) => {
+                setDestinationPlace(p);
+                setIsRoutePlannerOpen(true);
+              }}
+            />
+          )}
+
+          {/* 지도 렌더링 (카카오 키가 있으면 카카오 지도, 없으면 내장 Leaflet 지도) */}
+          {kakaoKey ? (
+            <KakaoMapView
+              kakaoKey={kakaoKey}
               places={places}
               campusNodes={campusNodes}
               selectedGateId={selectedGateId}
               selectedPlace={selectedPlace}
+              userGpsLocation={userGpsLocation}
               onSelectPlace={(place) => setSelectedPlace(place)}
+              onSelectKakaoPlace={handleSelectKakaoPlace}
+              searchQuery={searchQuery}
+              onOpenApiKeyModal={() => setIsApiKeyModalOpen(true)}
             />
-            {/* 카카오 지도 활성화 플로팅 칩 */}
-            <div className="kakao-floating-chip">
-              <span style={{ fontSize: '1rem' }}>🗺️</span>
-              <div>
-                <strong>실제 카카오 지도 연동 가능</strong>
-                <p style={{ margin: 0, fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                  카카오 JavaScript API 키를 등록하면 익산 전체 실시간 POI 검색 및 고해상도 로드뷰를 이용할 수 있습니다.
-                </p>
+          ) : (
+            <div style={{ flex: 1, position: 'relative', display: 'flex', flexDirection: 'column', width: '100%', height: '100%' }}>
+              <MapView
+                places={places}
+                campusNodes={campusNodes}
+                selectedGateId={selectedGateId}
+                selectedPlace={selectedPlace}
+                userGpsLocation={userGpsLocation}
+                onSelectPlace={(place) => setSelectedPlace(place)}
+              />
+              {/* 카카오 지도 활성화 플로팅 칩 */}
+              <div className="kakao-floating-chip">
+                <span style={{ fontSize: '1rem' }}>🗺️</span>
+                <div>
+                  <strong>실제 카카오 지도 연동 가능</strong>
+                  <p style={{ margin: 0, fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                    카카오 JavaScript API 키를 등록하면 익산 전체 실시간 POI 검색 및 고해상도 로드뷰를 이용할 수 있습니다.
+                  </p>
+                </div>
+                <button
+                  className="btn-small btn-primary"
+                  style={{ marginLeft: 'auto', flexShrink: 0 }}
+                  onClick={() => setIsApiKeyModalOpen(true)}
+                >
+                  키 등록
+                </button>
               </div>
-              <button
-                className="btn-small btn-primary"
-                style={{ marginLeft: 'auto', flexShrink: 0 }}
-                onClick={() => setIsApiKeyModalOpen(true)}
-              >
-                키 등록
-              </button>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </main>
 
       {/* 상세 모달 */}
